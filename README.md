@@ -25,7 +25,7 @@ Open-source SaaS for automatically sending SMS requests for Google Reviews.
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/google-opinion.git
+git clone https://github.com/dzirx/google-opinion.git
 cd google-opinion
 ```
 
@@ -145,8 +145,8 @@ MIT License - see [LICENSE](./LICENSE) for details
 
 ## 🆘 Support
 
-- **Issues**: https://github.com/yourusername/google-opinion/issues
-- **Email**: your-email@example.com
+- **Issues**: https://github.com/dzirx/google-opinion/issues
+- **Email**:
 
 ## 🎯 Roadmap
 
