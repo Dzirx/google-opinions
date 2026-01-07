@@ -10,6 +10,7 @@ export interface SmsConfig {
   authToken?: string; // Twilio
   sender: string;
   region?: string; // AWS SNS
+  [key: string]: string | undefined; // Index signature for compatibility with SmsProviderConfig
 }
 
 export const businesses = pgTable('businesses', {
