@@ -53,7 +53,7 @@ export default function LandingPage() {
               </span>
             </h1>
             <p className="text-xl sm:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Send automated SMS review requests after appointments. Boost your online reputation effortlessly.
+              Send automated SMS review requests after visits. Boost your online reputation effortlessly.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
@@ -118,7 +118,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Automated SMS</h3>
               <p className="text-gray-600">
-                Send personalized review requests automatically after each appointment
+                Send personalized review requests automatically after each visit
               </p>
             </div>
 
@@ -144,7 +144,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">CSV Import</h3>
               <p className="text-gray-600">
-                Bulk import appointments from CSV files and automate thousands of requests
+                Bulk import customers and visits from CSV files and automate thousands of requests
               </p>
             </div>
 

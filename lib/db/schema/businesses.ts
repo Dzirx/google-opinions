@@ -24,6 +24,10 @@ export const businesses = pgTable('businesses', {
   smsProvider: varchar('sms_provider', { length: 50 }).$type<SmsProvider>().default('smsapi'),
   smsConfig: jsonb('sms_config').$type<SmsConfig>(),
 
+  // SMS Templates - Available placeholders: {name}, {link}, {date}, {staff}
+  reminderSmsTemplate: text('reminder_sms_template').default('Cześć {name}! Przypominamy o wizycie w dniu {date}. Pozdrawiamy, {staff}'),
+  reviewSmsTemplate: text('review_sms_template').default('Cześć {name}! Dziękujemy za wizytę. Zostaw nam swoją opinię: {link} - {staff}'),
+
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

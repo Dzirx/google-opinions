@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { businesses, users, appointments } from '@/lib/db/schema';
+import { businesses, users, customers } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 
 // GET /api/admin/businesses - Get all businesses (admin only)
@@ -18,7 +18,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
-    // Fetch all businesses with user info and appointment counts
+    // Fetch all businesses with user info and customer counts
     const allBusinesses = await db
       .select({
         id: businesses.id,
@@ -31,11 +31,11 @@ export async function GET() {
         userId: businesses.userId,
         userName: users.name,
         userEmail: users.email,
-        appointmentCount: sql<number>`cast(count(${appointments.id}) as integer)`,
+        customerCount: sql<number>`cast(count(${customers.id}) as integer)`,
       })
       .from(businesses)
       .leftJoin(users, eq(businesses.userId, users.id))
-      .leftJoin(appointments, eq(appointments.businessId, businesses.id))
+      .leftJoin(customers, eq(customers.businessId, businesses.id))
       .groupBy(
         businesses.id,
         businesses.name,

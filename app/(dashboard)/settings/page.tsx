@@ -29,6 +29,8 @@ export default function SettingsPage() {
     smsProvider: 'smsapi',
     apiKey: '',
     sender: '',
+    reminderSmsTemplate: '',
+    reviewSmsTemplate: '',
   });
 
   useEffect(() => {
@@ -49,6 +51,8 @@ export default function SettingsPage() {
           smsProvider: data.business.smsProvider || 'smsapi',
           apiKey: data.business.smsConfig?.apiKey || '',
           sender: data.business.smsConfig?.sender || '',
+          reminderSmsTemplate: data.business.reminderSmsTemplate || '',
+          reviewSmsTemplate: data.business.reviewSmsTemplate || '',
         });
       }
     } catch (err) {
@@ -81,6 +85,8 @@ export default function SettingsPage() {
           googleReviewUrl: formData.googleReviewUrl,
           smsProvider: formData.smsProvider,
           smsConfig,
+          reminderSmsTemplate: formData.reminderSmsTemplate,
+          reviewSmsTemplate: formData.reviewSmsTemplate,
         }),
       });
 
@@ -126,6 +132,8 @@ export default function SettingsPage() {
         smsProvider: 'smsapi',
         apiKey: '',
         sender: '',
+        reminderSmsTemplate: '',
+        reviewSmsTemplate: '',
       });
       setSuccess('Business deleted successfully!');
       setShowDeleteConfirm(false);
@@ -295,6 +303,205 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* SMS Templates */}
+        <div className="bg-white shadow sm:rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">
+              SMS Message Templates
+            </h3>
+            <p className="mt-2 text-sm text-gray-500">
+              Customize the SMS messages sent to your customers. Use placeholders to personalize messages:
+            </p>
+
+            {/* Placeholders Info */}
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-blue-900 mb-3">Przeciągnij lub kliknij aby wstawić:</h4>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', '{name}');
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  onClick={() => {
+                    const textarea = document.activeElement as HTMLTextAreaElement;
+                    if (textarea?.tagName === 'TEXTAREA') {
+                      const start = textarea.selectionStart;
+                      const text = textarea.value;
+                      const newValue = text.substring(0, start) + '{name}' + text.substring(textarea.selectionEnd);
+                      if (textarea.id === 'reminderSmsTemplate') {
+                        setFormData({ ...formData, reminderSmsTemplate: newValue });
+                      } else if (textarea.id === 'reviewSmsTemplate') {
+                        setFormData({ ...formData, reviewSmsTemplate: newValue });
+                      }
+                      setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 6, start + 6); }, 0);
+                    }
+                  }}
+                  className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1.5 rounded font-mono text-xs transition-colors cursor-move border border-blue-300 active:scale-95"
+                >
+                  {"{name}"} <span className="text-blue-600 font-sans ml-1">- imię klienta</span>
+                </button>
+                <button
+                  type="button"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', '{link}');
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  onClick={() => {
+                    const textarea = document.activeElement as HTMLTextAreaElement;
+                    if (textarea?.tagName === 'TEXTAREA') {
+                      const start = textarea.selectionStart;
+                      const text = textarea.value;
+                      const newValue = text.substring(0, start) + '{link}' + text.substring(textarea.selectionEnd);
+                      if (textarea.id === 'reminderSmsTemplate') {
+                        setFormData({ ...formData, reminderSmsTemplate: newValue });
+                      } else if (textarea.id === 'reviewSmsTemplate') {
+                        setFormData({ ...formData, reviewSmsTemplate: newValue });
+                      }
+                      setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 6, start + 6); }, 0);
+                    }
+                  }}
+                  className="bg-green-100 hover:bg-green-200 text-green-800 px-3 py-1.5 rounded font-mono text-xs transition-colors cursor-move border border-green-300 active:scale-95"
+                >
+                  {"{link}"} <span className="text-green-600 font-sans ml-1">- link do opinii</span>
+                </button>
+                <button
+                  type="button"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', '{date}');
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  onClick={() => {
+                    const textarea = document.activeElement as HTMLTextAreaElement;
+                    if (textarea?.tagName === 'TEXTAREA') {
+                      const start = textarea.selectionStart;
+                      const text = textarea.value;
+                      const newValue = text.substring(0, start) + '{date}' + text.substring(textarea.selectionEnd);
+                      if (textarea.id === 'reminderSmsTemplate') {
+                        setFormData({ ...formData, reminderSmsTemplate: newValue });
+                      } else if (textarea.id === 'reviewSmsTemplate') {
+                        setFormData({ ...formData, reviewSmsTemplate: newValue });
+                      }
+                      setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 6, start + 6); }, 0);
+                    }
+                  }}
+                  className="bg-purple-100 hover:bg-purple-200 text-purple-800 px-3 py-1.5 rounded font-mono text-xs transition-colors cursor-move border border-purple-300 active:scale-95"
+                >
+                  {"{date}"} <span className="text-purple-600 font-sans ml-1">- data wizyty</span>
+                </button>
+                <button
+                  type="button"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', '{staff}');
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  onClick={() => {
+                    const textarea = document.activeElement as HTMLTextAreaElement;
+                    if (textarea?.tagName === 'TEXTAREA') {
+                      const start = textarea.selectionStart;
+                      const text = textarea.value;
+                      const newValue = text.substring(0, start) + '{staff}' + text.substring(textarea.selectionEnd);
+                      if (textarea.id === 'reminderSmsTemplate') {
+                        setFormData({ ...formData, reminderSmsTemplate: newValue });
+                      } else if (textarea.id === 'reviewSmsTemplate') {
+                        setFormData({ ...formData, reviewSmsTemplate: newValue });
+                      }
+                      setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 7, start + 7); }, 0);
+                    }
+                  }}
+                  className="bg-orange-100 hover:bg-orange-200 text-orange-800 px-3 py-1.5 rounded font-mono text-xs transition-colors cursor-move border border-orange-300 active:scale-95"
+                >
+                  {"{staff}"} <span className="text-orange-600 font-sans ml-1">- nazwa firmy</span>
+                </button>
+              </div>
+              <p className="mt-3 text-xs text-blue-700">
+                💡 Przeciągnij placeholder do pola tekstowego lub kliknij w pole i kliknij placeholder
+              </p>
+            </div>
+            <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4">
+              <div>
+                <label htmlFor="reminderSmsTemplate" className="block text-sm font-medium text-gray-700">
+                  Reminder SMS Template
+                </label>
+                <textarea
+                  id="reminderSmsTemplate"
+                  rows={3}
+                  value={formData.reminderSmsTemplate}
+                  onChange={(e) => setFormData({ ...formData, reminderSmsTemplate: e.target.value })}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('ring-2', 'ring-blue-400');
+                  }}
+                  onDragLeave={(e) => {
+                    e.currentTarget.classList.remove('ring-2', 'ring-blue-400');
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('ring-2', 'ring-blue-400');
+                    const placeholder = e.dataTransfer.getData('text/plain');
+                    const textarea = e.currentTarget;
+                    const start = textarea.selectionStart;
+                    const text = textarea.value;
+                    const newValue = text.substring(0, start) + placeholder + text.substring(textarea.selectionEnd);
+                    setFormData({ ...formData, reminderSmsTemplate: newValue });
+                    setTimeout(() => {
+                      textarea.focus();
+                      textarea.setSelectionRange(start + placeholder.length, start + placeholder.length);
+                    }, 0);
+                  }}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border text-gray-900 bg-white transition-all"
+                  placeholder="Cześć {name}! Przypominamy o wizycie w dniu {date}. Pozdrawiamy, {staff}"
+                />
+                <p className="mt-2 text-sm text-gray-500">
+                  Sent before the visit to remind customers about their upcoming visit.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="reviewSmsTemplate" className="block text-sm font-medium text-gray-700">
+                  Review Request SMS Template
+                </label>
+                <textarea
+                  id="reviewSmsTemplate"
+                  rows={4}
+                  value={formData.reviewSmsTemplate}
+                  onChange={(e) => setFormData({ ...formData, reviewSmsTemplate: e.target.value })}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('ring-2', 'ring-blue-400');
+                  }}
+                  onDragLeave={(e) => {
+                    e.currentTarget.classList.remove('ring-2', 'ring-blue-400');
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('ring-2', 'ring-blue-400');
+                    const placeholder = e.dataTransfer.getData('text/plain');
+                    const textarea = e.currentTarget;
+                    const start = textarea.selectionStart;
+                    const text = textarea.value;
+                    const newValue = text.substring(0, start) + placeholder + text.substring(textarea.selectionEnd);
+                    setFormData({ ...formData, reviewSmsTemplate: newValue });
+                    setTimeout(() => {
+                      textarea.focus();
+                      textarea.setSelectionRange(start + placeholder.length, start + placeholder.length);
+                    }, 0);
+                  }}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border text-gray-900 bg-white transition-all"
+                  placeholder="Cześć {name}! Dziękujemy za wizytę. Zostaw nam swoją opinię: {link} - {staff}"
+                />
+                <p className="mt-2 text-sm text-gray-500">
+                  Sent after the visit to request a Google review from the customer.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex justify-between">
           <div>
@@ -334,7 +541,7 @@ export default function SettingsPage() {
             <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Delete</h3>
             <p className="text-sm text-gray-500 mb-6">
               Are you sure you want to delete your business? This action cannot be undone. You can
-              only delete a business if it has no appointments.
+              only delete a business if it has no customers.
             </p>
             <div className="flex justify-end gap-3">
               <button

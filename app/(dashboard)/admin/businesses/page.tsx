@@ -13,7 +13,7 @@ interface Business {
   userId: string;
   userName: string;
   userEmail: string;
-  appointmentCount: number;
+  customerCount: number;
 }
 
 export default function AdminBusinessesPage() {
@@ -106,9 +106,9 @@ export default function AdminBusinessesPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Appointments</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Total Customers</dt>
                     <dd className="text-3xl font-semibold text-gray-900">
-                      {businesses.reduce((sum, b) => sum + b.appointmentCount, 0)}
+                      {businesses.reduce((sum, b) => sum + b.customerCount, 0)}
                     </dd>
                   </dl>
                 </div>
@@ -155,7 +155,7 @@ export default function AdminBusinessesPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SMS Provider</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Appointments</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customers</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                 </tr>
               </thead>
@@ -190,7 +190,7 @@ export default function AdminBusinessesPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{business.appointmentCount}</div>
+                      <div className="text-sm text-gray-900">{business.customerCount}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(business.createdAt).toLocaleDateString()}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { businesses, appointments } from '@/lib/db/schema';
+import { businesses, customers } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 // GET /api/business - Get user's business
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, phone, googleReviewUrl, smsProvider, smsConfig } = body;
+    const { name, phone, googleReviewUrl, smsProvider, smsConfig, reminderSmsTemplate, reviewSmsTemplate } = body;
 
     // Validation
     if (!name || !googleReviewUrl) {
@@ -79,6 +79,8 @@ export async function POST(request: NextRequest) {
         googleReviewUrl,
         smsProvider: smsProvider || 'smsapi',
         smsConfig: smsConfig || null,
+        reminderSmsTemplate: reminderSmsTemplate || null,
+        reviewSmsTemplate: reviewSmsTemplate || null,
       })
       .returning();
 
@@ -107,7 +109,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, phone, googleReviewUrl, smsProvider, smsConfig } = body;
+    const { name, phone, googleReviewUrl, smsProvider, smsConfig, reminderSmsTemplate, reviewSmsTemplate } = body;
 
     // Validation
     if (googleReviewUrl) {
@@ -129,6 +131,8 @@ export async function PATCH(request: NextRequest) {
         ...(googleReviewUrl !== undefined && { googleReviewUrl }),
         ...(smsProvider !== undefined && { smsProvider }),
         ...(smsConfig !== undefined && { smsConfig }),
+        ...(reminderSmsTemplate !== undefined && { reminderSmsTemplate }),
+        ...(reviewSmsTemplate !== undefined && { reviewSmsTemplate }),
         updatedAt: new Date(),
       })
       .where(eq(businesses.id, business.id))
@@ -141,7 +145,7 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// DELETE /api/business - Delete business (only if no appointments)
+// DELETE /api/business - Delete business (only if no customers)
 export async function DELETE() {
   try {
     const session = await auth();
@@ -158,17 +162,17 @@ export async function DELETE() {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }
 
-    // Check if business has appointments
-    const appointmentCount = await db
+    // Check if business has customers
+    const customerCount = await db
       .select()
-      .from(appointments)
-      .where(eq(appointments.businessId, business.id));
+      .from(customers)
+      .where(eq(customers.businessId, business.id));
 
-    if (appointmentCount.length > 0) {
+    if (customerCount.length > 0) {
       return NextResponse.json(
         {
           error:
-            'Cannot delete business with existing appointments. Please delete all appointments first.',
+            'Cannot delete business with existing customers. Please delete all customers first.',
         },
         { status: 400 }
       );
