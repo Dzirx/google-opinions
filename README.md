@@ -4,9 +4,9 @@ Open-source SaaS for automatically sending SMS requests for Google Reviews.
 
 ## ✨ Features
 
-- 📅 **Appointment Management** - Add, edit, import appointments via CSV
-- 📱 **Universal SMS Sending** - Support for multiple SMS providers (SMSAPI.pl, Twilio, Vonage)
-- 🌍 **Global Ready** - Works in any country with your preferred SMS provider
+- 📅 **Customer & Visit Management** - Track customers and their visits, import via CSV
+- 📱 **Dual SMS Flow** - Send reminder SMS before visit + review request SMS after visit
+- 🌍 **Universal SMS Sending** - Support for multiple SMS providers (SMSAPI.pl, Twilio, Vonage)
 - 📊 **Dashboard** - Track SMS status, view statistics
 - 🐳 **Docker Ready** - One-command deployment
 - 🔐 **Secure** - NextAuth.js authentication, encrypted credentials
@@ -128,36 +128,15 @@ See `.env.example` for all available options.
 
 **SMS Provider:**
 - SMS providers (SMSAPI.pl, Twilio, Vonage) are configured in the **dashboard**
-- No environment variables needed
-- Each user can choose their preferred provider with API credentials
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Open a Pull Request
+Contributions welcome! Fork the repo and submit a pull request.
 
 ## 📝 License
 
 MIT License - see [LICENSE](./LICENSE) for details
 
-## 🆘 Support
-
-- **Issues**: https://github.com/dzirx/google-opinion/issues
-- **Email**:
-
-## 🎯 Roadmap
-
-- [ ] Multi-location support
-- [ ] Email notifications
-- [ ] Advanced analytics
-- [ ] White-label options
-- [ ] API webhooks
-
 ---
-
-**Made with ❤️ for the community**
 
 ⭐ Star this repo if you find it useful!
