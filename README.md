@@ -135,7 +135,12 @@ Contributions welcome! Fork the repo and submit a pull request.
 
 ## 📝 License
 
-MIT License - see [LICENSE](./LICENSE) for details
+**Fair Source License** - Free for up to 200 customers per business.
+
+- ✅ **Free:** Use with up to 200 customers (end-users in database)
+- 💼 **Commercial:** For more than 200 customers, [contact us](https://github.com/dzirx/google-opinion/issues) for a commercial license
+
+See [LICENSE](./LICENSE) for full details.
 
 ---
 

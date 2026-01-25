@@ -359,13 +359,13 @@ export default function VisitsPage() {
     filteredVisits = visits.filter(v => v.reminderSmsStatus === 'pending');
   } else if (filter === 'review-pending') {
     filteredVisits = visits.filter(v => v.reviewSmsStatus === 'pending');
+  } else {
+    // Filter by selected date only when showing 'all'
+    filteredVisits = filteredVisits.filter(v => {
+      const visitDate = new Date(v.visitDate).toISOString().split('T')[0];
+      return visitDate === selectedDate;
+    });
   }
-
-  // Filter by selected date
-  filteredVisits = filteredVisits.filter(v => {
-    const visitDate = new Date(v.visitDate).toISOString().split('T')[0];
-    return visitDate === selectedDate;
-  });
 
   const getStatusColor = (status: string | null) => {
     switch (status) {
@@ -504,7 +504,7 @@ export default function VisitsPage() {
                 onClick={() => setFilter('all')}
                 className={`px-4 py-2 rounded-md ${filter === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
-                All ({visits.length})
+                All ({visits.filter(v => new Date(v.visitDate).toISOString().split('T')[0] === selectedDate).length})
               </button>
               <button
                 onClick={() => setFilter('reminder-pending')}
