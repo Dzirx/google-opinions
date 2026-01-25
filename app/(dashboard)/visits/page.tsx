@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 interface Visit {
   id: string;
@@ -30,6 +31,7 @@ interface Customer {
 }
 
 export default function VisitsPage() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const filterCustomerId = searchParams?.get('customerId');
 
@@ -100,7 +102,7 @@ export default function VisitsPage() {
 
   const handleCreateCustomer = async () => {
     if (!newCustomerData.name || !newCustomerData.surname || !newCustomerData.phone) {
-      setFormError('Name, surname, and phone are required');
+      setFormError(t('nameRequiredError'));
       return;
     }
 
@@ -150,7 +152,7 @@ export default function VisitsPage() {
     setFormError('');
 
     if (!formData.customerId) {
-      setFormError('Please select a customer');
+      setFormError(t('pleaseSelectCustomer'));
       return;
     }
 
@@ -216,7 +218,7 @@ export default function VisitsPage() {
   };
 
   const handleDeleteVisit = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this visit?')) return;
+    if (!confirm(t('areYouSure'))) return;
 
     try {
       const response = await fetch(`/api/visits?id=${id}`, {
@@ -269,11 +271,11 @@ export default function VisitsPage() {
 
   const exportToCSV = () => {
     if (filteredVisits.length === 0) {
-      alert('No visits to export');
+      alert(t('noVisitsToExport'));
       return;
     }
 
-    const headers = ['Customer', 'Phone', 'Visit Date', 'Type', 'Reminder SMS', 'Reminder Status', 'Review SMS', 'Review Status'];
+    const headers = [t('customer'), t('phone'), t('visitDate'), t('type'), t('reminderSMS'), t('status'), t('reviewSMS'), t('status')];
     const rows = filteredVisits.map(v => [
       v.customerName,
       v.customerPhone,
@@ -380,9 +382,9 @@ export default function VisitsPage() {
     <div className="px-4 py-6 sm:px-0">
       <div className="border-b border-gray-200 pb-5 flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Visits</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('visitsTitle')}</h1>
           <p className="mt-2 text-sm text-gray-500">
-            Manage customer visits and SMS reminders
+            {t('visitsSubtitle')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -391,13 +393,13 @@ export default function VisitsPage() {
             className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
             disabled={filteredVisits.length === 0}
           >
-            Export CSV
+            {t('exportCSV')}
           </button>
           <button
             onClick={() => setShowAddModal(true)}
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
           >
-            Add Visit
+            {t('addVisit')}
           </button>
         </div>
       </div>
@@ -433,7 +435,7 @@ export default function VisitsPage() {
                 onClick={goToToday}
                 className="px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
               >
-                Today
+                {t('today')}
               </button>
             </div>
 
@@ -487,7 +489,7 @@ export default function VisitsPage() {
             {/* Selected date info */}
             <div className="mt-2 pt-2 border-t border-gray-200">
               <p className="text-center text-gray-600 text-xs">
-                <span className="font-semibold text-gray-900">{filteredVisits.length}</span> visit{filteredVisits.length !== 1 ? 's' : ''} on{' '}
+                <span className="font-semibold text-gray-900">{filteredVisits.length}</span> {filteredVisits.length === 1 ? t('visit') : t('visitsPlural')} {t('on')}{' '}
                 <span className="font-semibold text-blue-600">
                   {new Date(selectedDate).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })}
                 </span>
@@ -504,19 +506,19 @@ export default function VisitsPage() {
                 onClick={() => setFilter('all')}
                 className={`px-4 py-2 rounded-md ${filter === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
-                All ({visits.filter(v => new Date(v.visitDate).toISOString().split('T')[0] === selectedDate).length})
+                {t('all')} ({visits.filter(v => new Date(v.visitDate).toISOString().split('T')[0] === selectedDate).length})
               </button>
               <button
                 onClick={() => setFilter('reminder-pending')}
                 className={`px-4 py-2 rounded-md ${filter === 'reminder-pending' ? 'bg-yellow-600 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
-                Pending Reminders ({visits.filter(v => v.reminderSmsStatus === 'pending').length})
+                {t('pendingReminders')} ({visits.filter(v => v.reminderSmsStatus === 'pending').length})
               </button>
               <button
                 onClick={() => setFilter('review-pending')}
                 className={`px-4 py-2 rounded-md ${filter === 'review-pending' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
               >
-                Pending Reviews ({visits.filter(v => v.reviewSmsStatus === 'pending').length})
+                {t('pendingReviews')} ({visits.filter(v => v.reviewSmsStatus === 'pending').length})
               </button>
             </div>
           )}
@@ -529,21 +531,21 @@ export default function VisitsPage() {
 
           <div className="bg-white shadow overflow-hidden rounded-lg overflow-x-auto">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading visits...</div>
+          <div className="p-8 text-center text-gray-500">{t('loadingVisits')}</div>
         ) : filteredVisits.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            No visits found. Add your first visit to get started!
+            {t('noVisitsFound')}
           </div>
         ) : (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visit Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reminder SMS</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Review SMS</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('customer')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('visitDate')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('type')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('reminderSMS')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('reviewSMS')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -571,7 +573,7 @@ export default function VisitsPage() {
                             onClick={() => handleSendSms(visit.id, 'reminder')}
                             className="ml-2 text-blue-600 hover:text-blue-900 text-xs"
                           >
-                            Send
+                            {t('send')}
                           </button>
                         )}
                       </div>
@@ -591,7 +593,7 @@ export default function VisitsPage() {
                             onClick={() => handleSendSms(visit.id, 'review')}
                             className="ml-2 text-blue-600 hover:text-blue-900 text-xs"
                           >
-                            Send
+                            {t('send')}
                           </button>
                         )}
                       </div>
@@ -606,14 +608,14 @@ export default function VisitsPage() {
                           onClick={() => openEditModal(visit)}
                           className="text-yellow-600 hover:text-yellow-900"
                         >
-                          Edit
+                          {t('edit')}
                         </button>
                       )}
                       <button
                         onClick={() => handleDeleteVisit(visit.id)}
                         className="text-red-600 hover:text-red-900"
                       >
-                        Delete
+                        {t('delete')}
                       </button>
                     </div>
                   </td>
@@ -631,19 +633,19 @@ export default function VisitsPage() {
         <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: 'rgba(128, 128, 128, 0.5)' }}>
           <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4 text-gray-900">
-              {editingVisit ? 'Edit Visit' : 'Add Visit'}
+              {editingVisit ? t('editVisitTitle') : t('addVisitTitle')}
             </h2>
             <form onSubmit={editingVisit ? handleUpdateVisit : handleAddVisit}>
               <div className="space-y-4">
                 {!editingVisit && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Customer</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('customer')}</label>
 
                     {!showNewCustomerForm ? (
                       <div className="relative">
                         <input
                           type="text"
-                          placeholder="Search by name, surname or phone..."
+                          placeholder={t('searchCustomers')}
                           value={customerSearch}
                           onChange={(e) => setCustomerSearch(e.target.value)}
                           className="block w-full rounded-md border border-gray-300 px-3 py-2 bg-white placeholder-gray-400"
@@ -673,7 +675,7 @@ export default function VisitsPage() {
                         {formData.customerId && (
                           <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md flex items-center justify-between">
                             <span className="text-sm text-green-900">
-                              Selected: {customers.find(c => c.id === formData.customerId)?.name} {customers.find(c => c.id === formData.customerId)?.surname}
+                              {t('selectedCustomer')} {customers.find(c => c.id === formData.customerId)?.name} {customers.find(c => c.id === formData.customerId)?.surname}
                             </span>
                             <button
                               type="button"
@@ -683,7 +685,7 @@ export default function VisitsPage() {
                               }}
                               className="text-red-600 hover:text-red-800 text-sm"
                             >
-                              Clear
+                              {t('clear')}
                             </button>
                           </div>
                         )}
@@ -693,13 +695,13 @@ export default function VisitsPage() {
                           onClick={() => setShowNewCustomerForm(true)}
                           className="mt-2 text-sm text-blue-600 hover:text-blue-800"
                         >
-                          + Create new customer
+                          {t('createNewCustomer')}
                         </button>
                       </div>
                     ) : (
                       <div className="border border-gray-300 rounded-lg p-4 space-y-3">
                         <div className="flex justify-between items-center mb-2">
-                          <h3 className="font-medium text-gray-900">New Customer</h3>
+                          <h3 className="font-medium text-gray-900">{t('newCustomer')}</h3>
                           <button
                             type="button"
                             onClick={() => {
@@ -708,12 +710,12 @@ export default function VisitsPage() {
                             }}
                             className="text-sm text-gray-600 hover:text-gray-800"
                           >
-                            Cancel
+                            {t('cancel')}
                           </button>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-xs font-medium text-gray-700">Name *</label>
+                            <label className="block text-xs font-medium text-gray-700">{t('name')} *</label>
                             <input
                               type="text"
                               value={newCustomerData.name}
@@ -723,7 +725,7 @@ export default function VisitsPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-gray-700">Surname *</label>
+                            <label className="block text-xs font-medium text-gray-700">{t('surname')} *</label>
                             <input
                               type="text"
                               value={newCustomerData.surname}
@@ -734,7 +736,7 @@ export default function VisitsPage() {
                           </div>
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700">Phone *</label>
+                          <label className="block text-xs font-medium text-gray-700">{t('phone')} *</label>
                           <input
                             type="tel"
                             value={newCustomerData.phone}
@@ -745,7 +747,7 @@ export default function VisitsPage() {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700">Email (optional)</label>
+                          <label className="block text-xs font-medium text-gray-700">{t('emailOptional')}</label>
                           <input
                             type="email"
                             value={newCustomerData.email}
@@ -763,7 +765,7 @@ export default function VisitsPage() {
                             className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                           />
                           <label htmlFor="smsConsent" className="ml-2 block text-xs text-gray-700">
-                            SMS consent
+                            {t('smsConsent')}
                           </label>
                         </div>
                         <button
@@ -772,7 +774,7 @@ export default function VisitsPage() {
                           disabled={formLoading}
                           className="w-full px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 text-sm"
                         >
-                          {formLoading ? 'Creating...' : 'Create Customer'}
+                          {formLoading ? t('creating') : t('addCustomer')}
                         </button>
                       </div>
                     )}
@@ -781,7 +783,7 @@ export default function VisitsPage() {
 
                 {editingVisit && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Customer</label>
+                    <label className="block text-sm font-medium text-gray-700">{t('customer')}</label>
                     <select
                       value={formData.customerId}
                       onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
@@ -790,7 +792,7 @@ export default function VisitsPage() {
                       required
                       disabled
                     >
-                      <option value="">Select customer</option>
+                      <option value="">{t('selectCustomerLabel')}</option>
                       {customers.map(c => (
                         <option key={c.id} value={c.id}>{c.name} {c.surname} - {c.phone}</option>
                       ))}
@@ -798,7 +800,7 @@ export default function VisitsPage() {
                   </div>
                 )}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Visit Date</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('visitDate')}</label>
                   <input
                     type="datetime-local"
                     value={formData.visitDate}
@@ -809,18 +811,18 @@ export default function VisitsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Visit Type (optional)</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('visitTypeOptional')}</label>
                   <input
                     type="text"
                     value={formData.visitType}
                     onChange={(e) => setFormData({ ...formData, visitType: e.target.value })}
-                    placeholder="e.g., Consultation, Treatment"
+                    placeholder={t('visitTypePlaceholder')}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white placeholder-gray-400"
                     style={{ color: '#000000' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Notes (optional)</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('notesOptional')}</label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -830,7 +832,7 @@ export default function VisitsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Reminder SMS Date (optional, before visit)</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('reminderSmsDateOptional')}</label>
                   <input
                     type="datetime-local"
                     value={formData.reminderSmsDate}
@@ -840,7 +842,7 @@ export default function VisitsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Review SMS Date (optional, after visit)</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('reviewSmsDateOptional')}</label>
                   <input
                     type="datetime-local"
                     value={formData.reviewSmsDate}
@@ -871,14 +873,14 @@ export default function VisitsPage() {
                   }}
                   className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={formLoading}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {formLoading ? 'Saving...' : editingVisit ? 'Update' : 'Create'}
+                  {formLoading ? t('creating') : editingVisit ? t('update') : t('create')}
                 </button>
               </div>
             </form>

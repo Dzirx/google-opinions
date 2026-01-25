@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 interface Business {
   id: string;
@@ -13,6 +14,7 @@ interface Business {
 }
 
 export default function SettingsPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [business, setBusiness] = useState<Business | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +59,7 @@ export default function SettingsPage() {
       }
     } catch (err) {
       console.error('Error fetching business:', err);
-      setError('Failed to load business settings');
+      setError(t('failedToLoadSettings'));
     } finally {
       setIsLoading(false);
     }
@@ -97,7 +99,7 @@ export default function SettingsPage() {
       }
 
       setBusiness(data.business);
-      setSuccess(business ? 'Business updated successfully!' : 'Business created successfully!');
+      setSuccess(business ? t('businessUpdatedSuccess') : t('businessCreatedSuccess'));
 
       // Refresh the page data
       await fetchBusiness();
@@ -135,7 +137,7 @@ export default function SettingsPage() {
         reminderSmsTemplate: '',
         reviewSmsTemplate: '',
       });
-      setSuccess('Business deleted successfully!');
+      setSuccess(t('businessDeletedSuccess'));
       setShowDeleteConfirm(false);
     } catch (err: any) {
       setError(err.message || 'Failed to delete business');
@@ -148,7 +150,7 @@ export default function SettingsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-gray-500">{t('loading')}</div>
       </div>
     );
   }
@@ -156,9 +158,9 @@ export default function SettingsPage() {
   return (
     <div className="px-4 py-6 sm:px-0">
       <div className="border-b border-gray-200 pb-5">
-        <h1 className="text-3xl font-bold leading-6 text-gray-900">Business Settings</h1>
+        <h1 className="text-3xl font-bold leading-6 text-gray-900">{t('settingsTitle')}</h1>
         <p className="mt-2 text-sm text-gray-500">
-          Manage your business information and SMS provider configuration
+          {t('settingsSubtitle')}
         </p>
       </div>
 
@@ -179,12 +181,12 @@ export default function SettingsPage() {
         <div className="bg-white shadow sm:rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Business Information
+              {t('businessInformation')}
             </h3>
             <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
               <div className="sm:col-span-4">
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Business Name *
+                  {t('businessName')} *
                 </label>
                 <input
                   type="text"
@@ -199,7 +201,7 @@ export default function SettingsPage() {
 
               <div className="sm:col-span-4">
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                  Business Phone
+                  {t('businessPhone')}
                 </label>
                 <input
                   type="tel"
@@ -216,7 +218,7 @@ export default function SettingsPage() {
                   htmlFor="googleReviewUrl"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Google Review URL *
+                  {t('googleReviewUrl')} *
                 </label>
                 <div className="mt-1">
                   <input
@@ -231,8 +233,7 @@ export default function SettingsPage() {
                     placeholder="https://g.page/r/YOUR_PLACE/review"
                   />
                   <p className="mt-2 text-sm text-gray-500">
-                    The direct link to your Google Business review page. Customers will be
-                    redirected here to leave a review.
+                    {t('googleReviewUrlHelp')}
                   </p>
                 </div>
               </div>
@@ -244,12 +245,12 @@ export default function SettingsPage() {
         <div className="bg-white shadow sm:rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900">
-              SMS Provider Configuration
+              {t('smsConfiguration')}
             </h3>
             <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
               <div className="sm:col-span-4">
                 <label htmlFor="smsProvider" className="block text-sm font-medium text-gray-700">
-                  SMS Provider
+                  {t('smsProvider')}
                 </label>
                 <select
                   id="smsProvider"
@@ -268,7 +269,7 @@ export default function SettingsPage() {
                 <>
                   <div className="sm:col-span-4">
                     <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700">
-                      API Key (Token)
+                      {t('apiKeyToken')}
                     </label>
                     <input
                       type="password"
@@ -276,13 +277,13 @@ export default function SettingsPage() {
                       value={formData.apiKey}
                       onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border text-gray-900 bg-white"
-                      placeholder="Your SMSAPI.pl token"
+                      placeholder={t('apiKeyPlaceholder')}
                     />
                   </div>
 
                   <div className="sm:col-span-4">
                     <label htmlFor="sender" className="block text-sm font-medium text-gray-700">
-                      Sender Name
+                      {t('senderName')}
                     </label>
                     <input
                       type="text"
@@ -294,7 +295,7 @@ export default function SettingsPage() {
                       maxLength={11}
                     />
                     <p className="mt-2 text-sm text-gray-500">
-                      The name that will appear as the SMS sender (max 11 characters)
+                      {t('senderNameHelp')}
                     </p>
                   </div>
                 </>
@@ -307,15 +308,15 @@ export default function SettingsPage() {
         <div className="bg-white shadow sm:rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900">
-              SMS Message Templates
+              {t('smsMessageTemplates')}
             </h3>
             <p className="mt-2 text-sm text-gray-500">
-              Customize the SMS messages sent to your customers. Use placeholders to personalize messages:
+              {t('smsMessageTemplatesHelp')}
             </p>
 
             {/* Placeholders Info */}
             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="text-sm font-semibold text-blue-900 mb-3">Przeciągnij lub kliknij aby wstawić:</h4>
+              <h4 className="text-sm font-semibold text-blue-900 mb-3">{t('dragOrClickToInsert')}</h4>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -340,7 +341,7 @@ export default function SettingsPage() {
                   }}
                   className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1.5 rounded font-mono text-xs transition-colors cursor-move border border-blue-300 active:scale-95"
                 >
-                  {"{name}"} <span className="text-blue-600 font-sans ml-1">- imię klienta</span>
+                  {"{name}"} <span className="text-blue-600 font-sans ml-1">- {t('customerNamePlaceholder')}</span>
                 </button>
                 <button
                   type="button"
@@ -365,7 +366,7 @@ export default function SettingsPage() {
                   }}
                   className="bg-green-100 hover:bg-green-200 text-green-800 px-3 py-1.5 rounded font-mono text-xs transition-colors cursor-move border border-green-300 active:scale-95"
                 >
-                  {"{link}"} <span className="text-green-600 font-sans ml-1">- link do opinii</span>
+                  {"{link}"} <span className="text-green-600 font-sans ml-1">- {t('reviewLinkPlaceholder')}</span>
                 </button>
                 <button
                   type="button"
@@ -390,7 +391,7 @@ export default function SettingsPage() {
                   }}
                   className="bg-purple-100 hover:bg-purple-200 text-purple-800 px-3 py-1.5 rounded font-mono text-xs transition-colors cursor-move border border-purple-300 active:scale-95"
                 >
-                  {"{date}"} <span className="text-purple-600 font-sans ml-1">- data wizyty</span>
+                  {"{date}"} <span className="text-purple-600 font-sans ml-1">- {t('visitDatePlaceholder')}</span>
                 </button>
                 <button
                   type="button"
@@ -415,17 +416,17 @@ export default function SettingsPage() {
                   }}
                   className="bg-orange-100 hover:bg-orange-200 text-orange-800 px-3 py-1.5 rounded font-mono text-xs transition-colors cursor-move border border-orange-300 active:scale-95"
                 >
-                  {"{staff}"} <span className="text-orange-600 font-sans ml-1">- nazwa firmy</span>
+                  {"{staff}"} <span className="text-orange-600 font-sans ml-1">- {t('businessNamePlaceholder')}</span>
                 </button>
               </div>
               <p className="mt-3 text-xs text-blue-700">
-                💡 Przeciągnij placeholder do pola tekstowego lub kliknij w pole i kliknij placeholder
+                💡 {t('dragTip')}
               </p>
             </div>
             <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4">
               <div>
                 <label htmlFor="reminderSmsTemplate" className="block text-sm font-medium text-gray-700">
-                  Reminder SMS Template
+                  {t('reminderSmsTemplateLabel')}
                 </label>
                 <textarea
                   id="reminderSmsTemplate"
@@ -457,13 +458,13 @@ export default function SettingsPage() {
                   placeholder="Cześć {name}! Przypominamy o wizycie w dniu {date}. Pozdrawiamy, {staff}"
                 />
                 <p className="mt-2 text-sm text-gray-500">
-                  Sent before the visit to remind customers about their upcoming visit.
+                  {t('reminderSmsTemplateHelp')}
                 </p>
               </div>
 
               <div>
                 <label htmlFor="reviewSmsTemplate" className="block text-sm font-medium text-gray-700">
-                  Review Request SMS Template
+                  {t('reviewSmsTemplateLabel')}
                 </label>
                 <textarea
                   id="reviewSmsTemplate"
@@ -495,7 +496,7 @@ export default function SettingsPage() {
                   placeholder="Cześć {name}! Dziękujemy za wizytę. Zostaw nam swoją opinię: {link} - {staff}"
                 />
                 <p className="mt-2 text-sm text-gray-500">
-                  Sent after the visit to request a Google review from the customer.
+                  {t('reviewSmsTemplateHelp')}
                 </p>
               </div>
             </div>
@@ -511,7 +512,7 @@ export default function SettingsPage() {
                 onClick={() => setShowDeleteConfirm(true)}
                 className="inline-flex items-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
-                Delete Business
+                {t('deleteBusiness')}
               </button>
             )}
           </div>
@@ -521,14 +522,14 @@ export default function SettingsPage() {
               onClick={() => router.push('/dashboard')}
               className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={isSaving}
               className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {isSaving ? 'Saving...' : business ? 'Update Business' : 'Create Business'}
+              {isSaving ? t('saving') : business ? t('updateBusiness') : t('createBusiness')}
             </button>
           </div>
         </div>
@@ -538,24 +539,23 @@ export default function SettingsPage() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Delete</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">{t('confirmDelete')}</h3>
             <p className="text-sm text-gray-500 mb-6">
-              Are you sure you want to delete your business? This action cannot be undone. You can
-              only delete a business if it has no customers.
+              {t('confirmDeleteBusinessMessage')}
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isSaving}
                 className="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
               >
-                {isSaving ? 'Deleting...' : 'Delete'}
+                {isSaving ? t('deleting') : t('delete')}
               </button>
             </div>
           </div>

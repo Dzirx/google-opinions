@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 interface Customer {
   id: string;
@@ -15,6 +16,7 @@ interface Customer {
 }
 
 export default function CustomersPage() {
+  const { t } = useLanguage();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -117,7 +119,7 @@ export default function CustomersPage() {
   };
 
   const handleDeleteCustomer = async (id: string) => {
-    if (!confirm('Are you sure? This will also delete all visits for this customer.')) return;
+    if (!confirm(t('areYouSureDeleteAllVisits'))) return;
 
     try {
       const response = await fetch(`/api/customers?id=${id}`, {
@@ -149,17 +151,17 @@ export default function CustomersPage() {
 
   const exportToCSV = () => {
     if (filteredCustomers.length === 0) {
-      alert('No customers to export');
+      alert(t('noCustomersToExport'));
       return;
     }
 
-    const headers = ['Name', 'Surname', 'Phone', 'Email', 'SMS Consent', 'Visits Count'];
+    const headers = [t('name'), t('surname'), t('phone'), t('email'), t('smsConsent'), t('visitsCount')];
     const rows = filteredCustomers.map(c => [
       c.name,
       c.surname,
       c.phone,
       c.email || '',
-      c.smsConsent ? 'Yes' : 'No',
+      c.smsConsent ? t('yes') : t('no'),
       c.visits?.length || 0
     ]);
 
@@ -192,9 +194,9 @@ export default function CustomersPage() {
     <div className="px-4 py-6 sm:px-0">
       <div className="border-b border-gray-200 pb-5 flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('customersTitle')}</h1>
           <p className="mt-2 text-sm text-gray-500">
-            Manage your customer database
+            {t('customersSubtitle')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -203,13 +205,13 @@ export default function CustomersPage() {
             className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
             disabled={filteredCustomers.length === 0}
           >
-            Export CSV
+            {t('exportCSV')}
           </button>
           <button
             onClick={() => setShowAddModal(true)}
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
           >
-            Add Customer
+            {t('addCustomer')}
           </button>
         </div>
       </div>
@@ -220,19 +222,19 @@ export default function CustomersPage() {
           onClick={() => setFilter('all')}
           className={`px-4 py-2 rounded-md ${filter === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}`}
         >
-          All ({customers.length})
+          {t('all')} ({customers.length})
         </button>
         <button
           onClick={() => setFilter('consented')}
           className={`px-4 py-2 rounded-md ${filter === 'consented' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
         >
-          SMS Consent ({customers.filter(c => c.smsConsent).length})
+          {t('smsConsentFilter')} ({customers.filter(c => c.smsConsent).length})
         </button>
         <button
           onClick={() => setFilter('not-consented')}
           className={`px-4 py-2 rounded-md ${filter === 'not-consented' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}
         >
-          No Consent ({customers.filter(c => !c.smsConsent).length})
+          {t('noConsentFilter')} ({customers.filter(c => !c.smsConsent).length})
         </button>
       </div>
 
@@ -246,21 +248,21 @@ export default function CustomersPage() {
       {/* Table */}
       <div className="mt-6 bg-white shadow overflow-hidden rounded-lg">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading customers...</div>
+          <div className="p-8 text-center text-gray-500">{t('loadingCustomers')}</div>
         ) : filteredCustomers.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            No customers found. Add your first customer to get started!
+            {t('noCustomersFound')}
           </div>
         ) : (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SMS Consent</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visits</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('name')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('phone')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('email')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('smsConsent')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('visitsCount')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -277,7 +279,7 @@ export default function CustomersPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs rounded-full ${customer.smsConsent ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {customer.smsConsent ? 'Yes' : 'No'}
+                      {customer.smsConsent ? t('yes') : t('no')}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -289,19 +291,19 @@ export default function CustomersPage() {
                         href={`/visits?customerId=${customer.id}`}
                         className="text-blue-600 hover:text-blue-900"
                       >
-                        View Visits
+                        {t('viewVisits')}
                       </Link>
                       <button
                         onClick={() => openEditModal(customer)}
                         className="text-yellow-600 hover:text-yellow-900"
                       >
-                        Edit
+                        {t('edit')}
                       </button>
                       <button
                         onClick={() => handleDeleteCustomer(customer.id)}
                         className="text-red-600 hover:text-red-900"
                       >
-                        Delete
+                        {t('delete')}
                       </button>
                     </div>
                   </td>
@@ -317,12 +319,12 @@ export default function CustomersPage() {
         <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ backgroundColor: 'rgba(128, 128, 128, 0.5)' }}>
           <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6">
             <h2 className="text-xl font-bold mb-4 text-gray-900">
-              {editingCustomer ? 'Edit Customer' : 'Add Customer'}
+              {editingCustomer ? t('editCustomerTitle') : t('addCustomerTitle')}
             </h2>
             <form onSubmit={editingCustomer ? handleUpdateCustomer : handleAddCustomer}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('name')}</label>
                   <input
                     type="text"
                     value={formData.name}
@@ -333,7 +335,7 @@ export default function CustomersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Surname</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('surname')}</label>
                   <input
                     type="text"
                     value={formData.surname}
@@ -344,7 +346,7 @@ export default function CustomersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('phone')}</label>
                   <input
                     type="tel"
                     value={formData.phone}
@@ -356,7 +358,7 @@ export default function CustomersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Email (optional)</label>
+                  <label className="block text-sm font-medium text-gray-700">{t('emailOptional')}</label>
                   <input
                     type="email"
                     value={formData.email}
@@ -373,7 +375,7 @@ export default function CustomersPage() {
                       onChange={(e) => setFormData({ ...formData, smsConsent: e.target.checked })}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">SMS Consent</span>
+                    <span className="text-sm text-gray-700">{t('smsConsent')}</span>
                   </label>
                 </div>
               </div>
@@ -395,14 +397,14 @@ export default function CustomersPage() {
                   }}
                   className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={formLoading}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {formLoading ? 'Saving...' : editingCustomer ? 'Update' : 'Create'}
+                  {formLoading ? t('saving') : editingCustomer ? t('update') : t('create')}
                 </button>
               </div>
             </form>
