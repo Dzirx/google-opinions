@@ -1,7 +1,5 @@
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { customers, visits, businesses } from '@/lib/db/schema';
-import { eq, desc } from 'drizzle-orm';
 import { DashboardContent } from '@/components/dashboard-content';
 
 export default async function DashboardPage() {
@@ -11,8 +9,8 @@ export default async function DashboardPage() {
     return null;
   }
 
-  const userBusiness = await db.query.businesses.findFirst({
-    where: eq(businesses.userId, session.user.id),
+  const userBusiness = await db.business.findFirst({
+    where: { userId: session.user.id },
   });
 
   const today = new Date();
@@ -31,11 +29,11 @@ export default async function DashboardPage() {
 
   if (userBusiness) {
     // Get all customers
-    const allCustomers = await db.query.customers.findMany({
-      where: eq(customers.businessId, userBusiness.id),
-      with: {
+    const allCustomers = await db.customer.findMany({
+      where: { businessId: userBusiness.id },
+      include: {
         visits: {
-          orderBy: [desc(visits.createdAt)],
+          orderBy: { createdAt: 'desc' },
         },
       },
     });

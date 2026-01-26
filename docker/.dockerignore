@@ -11,4 +11,3 @@ README.md
 .env*.local
 .env.local
 *.md
-drizzle

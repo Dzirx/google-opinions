@@ -14,8 +14,10 @@ Open-source SaaS for automatically sending SMS requests for Google Reviews.
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 16, TypeScript, Tailwind CSS 4
-- **Backend**: Next.js API Routes, Drizzle ORM
-- **Database**: PostgreSQL (Neon for cloud, Docker for self-hosted)
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Database**: PostgreSQL or MSSQL (choose one - just change connection string!)
+  - PostgreSQL: Neon for cloud, Docker for self-hosted
+  - MSSQL: SQL Server 2022, Azure SQL
 - **Auth**: NextAuth.js v5
 - **SMS**: Universal provider support (SMSAPI.pl, Twilio, Vonage, extensible)
 
@@ -106,7 +108,7 @@ npm run dev              # Start Next.js dev server
 npm run db:generate      # Generate migrations
 npm run db:migrate       # Run migrations
 npm run db:push          # Push schema to database (no migrations)
-npm run db:studio        # Open Drizzle Studio
+npm run db:studio        # Open Prisma Studio
 
 # Production
 npm run build            # Build for production
@@ -122,12 +124,28 @@ npm run lint             # Run ESLint
 See `.env.example` for all available options.
 
 **Required:**
-- `DATABASE_URL` - PostgreSQL connection string
+- `DATABASE_URL` - PostgreSQL or MSSQL connection string (see below)
 - `NEXTAUTH_SECRET` - Secret for JWT encryption
 - `CRON_SECRET` - Secret for cron endpoints
 
 **SMS Provider:**
 - SMS providers (SMSAPI.pl, Twilio, Vonage) are configured in the **dashboard**
+
+### Database Support (PostgreSQL or MSSQL)
+
+This application supports **both PostgreSQL and Microsoft SQL Server**! Just change the connection string:
+
+**PostgreSQL (default):**
+```bash
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/google_opinion"
+```
+
+**Microsoft SQL Server:**
+```bash
+DATABASE_URL="sqlserver://localhost:1433;database=google_opinion;user=sa;password=YourPassword;encrypt=false;trustServerCertificate=true"
+```
+
+📖 **Full guide:** See [README_BAZY_DANYCH.md](./README_BAZY_DANYCH.md) for step-by-step instructions on switching databases.
 
 ## 🤝 Contributing
 
