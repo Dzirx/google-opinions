@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { businesses, customers, visits, smsLogs } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
 import { SmsProviderFactory } from '@/lib/sms/providers/factory';
 
 export async function POST(req: NextRequest) {
@@ -12,8 +10,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const userBusiness = await db.business.findFirst({
+      where: { userId: session.user.id },
     });
 
     if (!userBusiness) {
@@ -32,9 +30,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Get visit with customer
-    const visit = await db.query.visits.findFirst({
-      where: eq(visits.id, visitId),
-      with: {
+    const visit = await db.visit.findFirst({
+      where: { id: visitId },
+      include: {
         customer: true,
       },
     });
@@ -85,8 +83,8 @@ export async function POST(req: NextRequest) {
     let smsResult;
     try {
       const smsProvider = SmsProviderFactory.create(
-        userBusiness.smsProvider,
-        userBusiness.smsConfig
+        userBusiness.smsProvider as any,
+        userBusiness.smsConfig as any
       );
 
       smsResult = await smsProvider.sendSms(visit.customer.phone, message);
@@ -94,30 +92,32 @@ export async function POST(req: NextRequest) {
       console.error('SMS sending failed:', smsError);
 
       // Log failed SMS
-      await db.insert(smsLogs).values({
-        visitId: visit.id,
-        smsType,
-        phone: visit.customer.phone,
-        message,
-        status: 'failed',
-        errorMessage: smsError instanceof Error ? smsError.message : 'Unknown error',
+      await db.smsLog.create({
+        data: {
+          visitId: visit.id,
+          smsType,
+          phone: visit.customer.phone,
+          message,
+          status: 'failed',
+          errorMessage: smsError instanceof Error ? smsError.message : 'Unknown error',
+        },
       });
 
       // Update visit status to failed
       if (smsType === 'reminder') {
-        await db.update(visits)
-          .set({
+        await db.visit.update({
+          where: { id: visit.id },
+          data: {
             reminderSmsStatus: 'failed',
-            updatedAt: new Date(),
-          })
-          .where(eq(visits.id, visit.id));
+          },
+        });
       } else {
-        await db.update(visits)
-          .set({
+        await db.visit.update({
+          where: { id: visit.id },
+          data: {
             reviewSmsStatus: 'failed',
-            updatedAt: new Date(),
-          })
-          .where(eq(visits.id, visit.id));
+          },
+        });
       }
 
       return NextResponse.json({
@@ -127,34 +127,36 @@ export async function POST(req: NextRequest) {
     }
 
     // Log successful SMS
-    await db.insert(smsLogs).values({
-      visitId: visit.id,
-      smsType,
-      phone: visit.customer.phone,
-      message,
-      status: 'sent',
-      smsapiMessageId: smsResult.messageId || null,
-      cost: smsResult.cost || null,
+    await db.smsLog.create({
+      data: {
+        visitId: visit.id,
+        smsType,
+        phone: visit.customer.phone,
+        message,
+        status: 'sent',
+        smsapiMessageId: smsResult.messageId || null,
+        cost: smsResult.cost || null,
+      },
     });
 
     // Update visit status
     const now = new Date();
     if (smsType === 'reminder') {
-      await db.update(visits)
-        .set({
+      await db.visit.update({
+        where: { id: visit.id },
+        data: {
           reminderSmsStatus: 'sent',
           reminderSmsSentAt: now,
-          updatedAt: now,
-        })
-        .where(eq(visits.id, visit.id));
+        },
+      });
     } else {
-      await db.update(visits)
-        .set({
+      await db.visit.update({
+        where: { id: visit.id },
+        data: {
           reviewSmsStatus: 'sent',
           reviewSmsSentAt: now,
-          updatedAt: now,
-        })
-        .where(eq(visits.id, visit.id));
+        },
+      });
     }
 
     return NextResponse.json({

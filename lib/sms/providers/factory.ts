@@ -2,7 +2,7 @@ import { ISmsProvider, SmsProviderConfig } from './interface';
 import { SmsApiProvider } from './smsapi';
 import { TwilioProvider } from './twilio';
 import { VonageProvider } from './vonage';
-import { SmsProvider } from '@/lib/db/schema/businesses';
+import { SmsProvider } from '@/lib/db/types';
 
 /**
  * Factory for creating SMS provider instances

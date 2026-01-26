@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { businesses, customers } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
 
 // GET /api/business - Get user's business
 export async function GET() {
@@ -13,8 +11,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const business = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const business = await db.business.findFirst({
+      where: { userId: session.user.id },
     });
 
     if (!business) {
@@ -38,8 +36,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already has a business (1:1 relationship in MVP)
-    const existingBusiness = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const existingBusiness = await db.business.findFirst({
+      where: { userId: session.user.id },
     });
 
     if (existingBusiness) {
@@ -70,9 +68,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create business
-    const [newBusiness] = await db
-      .insert(businesses)
-      .values({
+    const newBusiness = await db.business.create({
+      data: {
         userId: session.user.id,
         name,
         phone: phone || null,
@@ -81,8 +78,8 @@ export async function POST(request: NextRequest) {
         smsConfig: smsConfig || null,
         reminderSmsTemplate: reminderSmsTemplate || null,
         reviewSmsTemplate: reviewSmsTemplate || null,
-      })
-      .returning();
+      },
+    });
 
     return NextResponse.json({ business: newBusiness }, { status: 201 });
   } catch (error) {
@@ -100,8 +97,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const business = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const business = await db.business.findFirst({
+      where: { userId: session.user.id },
     });
 
     if (!business) {
@@ -123,9 +120,9 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update business
-    const [updatedBusiness] = await db
-      .update(businesses)
-      .set({
+    const updatedBusiness = await db.business.update({
+      where: { id: business.id },
+      data: {
         ...(name !== undefined && { name }),
         ...(phone !== undefined && { phone: phone || null }),
         ...(googleReviewUrl !== undefined && { googleReviewUrl }),
@@ -133,10 +130,8 @@ export async function PATCH(request: NextRequest) {
         ...(smsConfig !== undefined && { smsConfig }),
         ...(reminderSmsTemplate !== undefined && { reminderSmsTemplate }),
         ...(reviewSmsTemplate !== undefined && { reviewSmsTemplate }),
-        updatedAt: new Date(),
-      })
-      .where(eq(businesses.id, business.id))
-      .returning();
+      },
+    });
 
     return NextResponse.json({ business: updatedBusiness }, { status: 200 });
   } catch (error) {
@@ -154,8 +149,8 @@ export async function DELETE() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const business = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const business = await db.business.findFirst({
+      where: { userId: session.user.id },
     });
 
     if (!business) {
@@ -163,12 +158,11 @@ export async function DELETE() {
     }
 
     // Check if business has customers
-    const customerCount = await db
-      .select()
-      .from(customers)
-      .where(eq(customers.businessId, business.id));
+    const customerCount = await db.customer.count({
+      where: { businessId: business.id },
+    });
 
-    if (customerCount.length > 0) {
+    if (customerCount > 0) {
       return NextResponse.json(
         {
           error:
@@ -179,7 +173,9 @@ export async function DELETE() {
     }
 
     // Delete business
-    await db.delete(businesses).where(eq(businesses.id, business.id));
+    await db.business.delete({
+      where: { id: business.id },
+    });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

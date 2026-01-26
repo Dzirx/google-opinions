@@ -1,0 +1,165 @@
+// Prisma schema file - supports both PostgreSQL and MSSQL
+// Set database provider via DATABASE_URL environment variable
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Auto-detected from DATABASE_URL (postgresql or sqlserver)
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// Enums (PostgreSQL only)
+// ========================================
+enum SmsStatus {
+  pending
+  sent
+  failed
+}
+
+enum SmsType {
+  reminder
+  review
+}
+
+enum ReviewStatus {
+  not_opened
+  opened
+  completed
+}
+
+// ========================================
+// Users Table
+// ========================================
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  name         String?   @db.VarChar(255)
+  role         String    @default("user") @db.VarChar(20)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  business Business?
+
+  @@map("users")
+}
+
+// ========================================
+// Businesses Table
+// ========================================
+model Business {
+  id                   String    @id @default(uuid()) @db.Uuid
+  userId               String    @unique @map("user_id") @db.Uuid
+  name                 String    @db.VarChar(255)
+  phone                String?   @db.VarChar(20)
+  googleReviewUrl      String    @map("google_review_url") @db.Text
+
+  // SMS Provider Configuration
+  smsProvider          String?   @default("smsapi") @map("sms_provider") @db.VarChar(50)
+  smsConfig            Json?     @map("sms_config")
+
+  // SMS Templates
+  reminderSmsTemplate  String?   @default("Cześć {name}! Przypominamy o wizycie w dniu {date}. Pozdrawiamy, {staff}") @map("reminder_sms_template") @db.Text
+  reviewSmsTemplate    String?   @default("Cześć {name}! Dziękujemy za wizytę. Zostaw nam swoją opinię: {link} - {staff}") @map("review_sms_template") @db.Text
+
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customers            Customer[]
+
+  @@map("businesses")
+}
+
+// ========================================
+// Customers Table
+// ========================================
+model Customer {
+  id         String    @id @default(uuid()) @db.Uuid
+  businessId String    @map("business_id") @db.Uuid
+  name       String    @db.VarChar(255)
+  surname    String    @db.VarChar(255)
+  phone      String    @db.VarChar(20)
+  email      String?   @db.VarChar(255)
+  smsConsent Boolean   @default(true) @map("sms_consent")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  visits     Visit[]
+
+  @@unique([businessId, phone], name: "unique_business_phone")
+  @@map("customers")
+}
+
+// ========================================
+// Visits Table
+// ========================================
+model Visit {
+  id                  String    @id @default(uuid()) @db.Uuid
+  customerId          String    @map("customer_id") @db.Uuid
+  visitDate           DateTime  @map("visit_date") @db.Timestamp(6)
+  visitType           String?   @map("visit_type") @db.VarChar(100)
+  notes               String?   @db.Text
+
+  // Reminder SMS (before visit)
+  reminderSmsDate     DateTime?  @map("reminder_sms_date") @db.Timestamp(6)
+  reminderSmsStatus   SmsStatus? @default(pending) @map("reminder_sms_status")
+  reminderSmsSentAt   DateTime?  @map("reminder_sms_sent_at") @db.Timestamp(6)
+
+  // Review SMS (after visit)
+  reviewSmsDate       DateTime?  @map("review_sms_date") @db.Timestamp(6)
+  reviewSmsStatus     SmsStatus? @default(pending) @map("review_sms_status")
+  reviewSmsSentAt     DateTime?  @map("review_sms_sent_at") @db.Timestamp(6)
+
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  customer            Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  smsLogs             SmsLog[]
+  review              Review?
+
+  @@map("visits")
+}
+
+// ========================================
+// SMS Logs Table
+// ========================================
+model SmsLog {
+  id               String    @id @default(uuid()) @db.Uuid
+  visitId          String    @map("visit_id") @db.Uuid
+  smsType          SmsType   @map("sms_type")
+  phone            String    @db.VarChar(20)
+  message          String    @db.Text
+  status           String    @db.VarChar(20)
+  errorMessage     String?   @map("error_message") @db.Text
+  smsapiMessageId  String?   @map("smsapi_message_id") @db.VarChar(255)
+  cost             Int?
+  sentAt           DateTime  @default(now()) @map("sent_at") @db.Timestamp(6)
+
+  visit            Visit     @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@map("sms_logs")
+}
+
+// ========================================
+// Reviews Table
+// ========================================
+model Review {
+  id           String        @id @default(uuid()) @db.Uuid
+  visitId      String        @unique @map("visit_id") @db.Uuid
+  linkOpened   Boolean       @default(false) @map("link_opened")
+  openedAt     DateTime?     @map("opened_at") @db.Timestamp(6)
+  rating       Int?
+  reviewText   String?       @map("review_text") @db.Text
+  reviewStatus ReviewStatus  @default(not_opened) @map("review_status")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  visit        Visit     @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}

@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { businesses, users, customers } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
 
 // GET /api/admin/businesses - Get all businesses (admin only)
 export async function GET() {
@@ -19,38 +17,41 @@ export async function GET() {
     }
 
     // Fetch all businesses with user info and customer counts
-    const allBusinesses = await db
-      .select({
-        id: businesses.id,
-        name: businesses.name,
-        phone: businesses.phone,
-        googleReviewUrl: businesses.googleReviewUrl,
-        smsProvider: businesses.smsProvider,
-        createdAt: businesses.createdAt,
-        updatedAt: businesses.updatedAt,
-        userId: businesses.userId,
-        userName: users.name,
-        userEmail: users.email,
-        customerCount: sql<number>`cast(count(${customers.id}) as integer)`,
-      })
-      .from(businesses)
-      .leftJoin(users, eq(businesses.userId, users.id))
-      .leftJoin(customers, eq(customers.businessId, businesses.id))
-      .groupBy(
-        businesses.id,
-        businesses.name,
-        businesses.phone,
-        businesses.googleReviewUrl,
-        businesses.smsProvider,
-        businesses.createdAt,
-        businesses.updatedAt,
-        businesses.userId,
-        users.name,
-        users.email
-      )
-      .orderBy(businesses.createdAt);
+    const allBusinesses = await db.business.findMany({
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+        customers: {
+          select: {
+            id: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
 
-    return NextResponse.json({ businesses: allBusinesses });
+    // Transform data to match expected format
+    const transformedBusinesses = allBusinesses.map(business => ({
+      id: business.id,
+      name: business.name,
+      phone: business.phone,
+      googleReviewUrl: business.googleReviewUrl,
+      smsProvider: business.smsProvider,
+      createdAt: business.createdAt,
+      updatedAt: business.updatedAt,
+      userId: business.userId,
+      userName: business.user.name,
+      userEmail: business.user.email,
+      customerCount: business.customers.length,
+    }));
+
+    return NextResponse.json({ businesses: transformedBusinesses });
   } catch (error) {
     console.error('Error fetching businesses (admin):', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

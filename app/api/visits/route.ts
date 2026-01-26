@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { businesses, customers, visits } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
 
 // GET - List all visits for business (with customer data)
 export async function GET() {
@@ -12,8 +10,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const userBusiness = await db.business.findFirst({
+      where: { userId: session.user.id },
     });
 
     if (!userBusiness) {
@@ -21,12 +19,12 @@ export async function GET() {
     }
 
     // Get all customers for this business
-    const businessCustomers = await db.query.customers.findMany({
-      where: eq(customers.businessId, userBusiness.id),
-      with: {
+    const businessCustomers = await db.customer.findMany({
+      where: { businessId: userBusiness.id },
+      include: {
         visits: {
-          orderBy: (visits, { desc }) => [desc(visits.visitDate)],
-          with: {
+          orderBy: { visitDate: 'desc' },
+          include: {
             review: true,
           },
         },
@@ -62,8 +60,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const userBusiness = await db.business.findFirst({
+      where: { userId: session.user.id },
     });
 
     if (!userBusiness) {
@@ -90,11 +88,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify customer exists and belongs to business
-    const customer = await db.query.customers.findFirst({
-      where: and(
-        eq(customers.id, customerId),
-        eq(customers.businessId, userBusiness.id)
-      ),
+    const customer = await db.customer.findFirst({
+      where: {
+        id: customerId,
+        businessId: userBusiness.id,
+      },
     });
 
     if (!customer) {
@@ -130,14 +128,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Create visit
-    const [newVisit] = await db.insert(visits).values({
-      customerId,
-      visitDate: visit,
-      visitType: visitType || null,
-      notes: notes || null,
-      reminderSmsDate: reminderSmsDate ? new Date(reminderSmsDate) : null,
-      reviewSmsDate: reviewSmsDate ? new Date(reviewSmsDate) : null,
-    }).returning();
+    const newVisit = await db.visit.create({
+      data: {
+        customerId,
+        visitDate: visit,
+        visitType: visitType || null,
+        notes: notes || null,
+        reminderSmsDate: reminderSmsDate ? new Date(reminderSmsDate) : null,
+        reviewSmsDate: reviewSmsDate ? new Date(reviewSmsDate) : null,
+      },
+    });
 
     return NextResponse.json({ visit: newVisit }, { status: 201 });
   } catch (error) {
@@ -154,8 +154,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const userBusiness = await db.business.findFirst({
+      where: { userId: session.user.id },
     });
 
     if (!userBusiness) {
@@ -178,9 +178,9 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Get visit with customer to verify ownership
-    const visit = await db.query.visits.findFirst({
-      where: eq(visits.id, id),
-      with: {
+    const visit = await db.visit.findFirst({
+      where: { id },
+      include: {
         customer: true,
       },
     });
@@ -225,9 +225,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Update visit
-    const updateData: any = {
-      updatedAt: new Date(),
-    };
+    const updateData: any = {};
 
     if (customerId !== undefined) updateData.customerId = customerId;
     if (visitDate !== undefined) updateData.visitDate = newVisitDate;
@@ -236,10 +234,10 @@ export async function PATCH(req: NextRequest) {
     if (reminderSmsDate !== undefined) updateData.reminderSmsDate = reminderSmsDate ? new Date(reminderSmsDate) : null;
     if (reviewSmsDate !== undefined) updateData.reviewSmsDate = reviewSmsDate ? new Date(reviewSmsDate) : null;
 
-    const [updatedVisit] = await db.update(visits)
-      .set(updateData)
-      .where(eq(visits.id, id))
-      .returning();
+    const updatedVisit = await db.visit.update({
+      where: { id },
+      data: updateData,
+    });
 
     return NextResponse.json({ visit: updatedVisit });
   } catch (error) {
@@ -256,8 +254,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const userBusiness = await db.business.findFirst({
+      where: { userId: session.user.id },
     });
 
     if (!userBusiness) {
@@ -272,9 +270,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Get visit with customer to verify ownership
-    const visit = await db.query.visits.findFirst({
-      where: eq(visits.id, id),
-      with: {
+    const visit = await db.visit.findFirst({
+      where: { id },
+      include: {
         customer: true,
       },
     });
@@ -284,7 +282,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Delete visit (cascade deletes reviews, sms_logs)
-    await db.delete(visits).where(eq(visits.id, id));
+    await db.visit.delete({
+      where: { id },
+    });
 
     return NextResponse.json({ message: 'Visit deleted successfully' });
   } catch (error) {

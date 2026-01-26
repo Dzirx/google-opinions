@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { visits, smsLogs, businesses, customers } from '@/lib/db/schema';
-import { eq, and, lte, isNotNull } from 'drizzle-orm';
 import { SmsProviderFactory } from '@/lib/sms/providers/factory';
 
 /**
@@ -36,15 +34,17 @@ export async function GET(req: NextRequest) {
     };
 
     // Find pending reminder SMS (before visit)
-    const pendingReminders = await db.query.visits.findMany({
-      where: and(
-        isNotNull(visits.reminderSmsDate),
-        eq(visits.reminderSmsStatus, 'pending'),
-        lte(visits.reminderSmsDate, now)
-      ),
-      with: {
+    const pendingReminders = await db.visit.findMany({
+      where: {
+        reminderSmsDate: {
+          not: null,
+          lte: now,
+        },
+        reminderSmsStatus: 'pending',
+      },
+      include: {
         customer: {
-          with: {
+          include: {
             business: true,
           },
         },
@@ -60,15 +60,17 @@ export async function GET(req: NextRequest) {
     }
 
     // Find pending review SMS (after visit)
-    const pendingReviews = await db.query.visits.findMany({
-      where: and(
-        isNotNull(visits.reviewSmsDate),
-        eq(visits.reviewSmsStatus, 'pending'),
-        lte(visits.reviewSmsDate, now)
-      ),
-      with: {
+    const pendingReviews = await db.visit.findMany({
+      where: {
+        reviewSmsDate: {
+          not: null,
+          lte: now,
+        },
+        reviewSmsStatus: 'pending',
+      },
+      include: {
         customer: {
-          with: {
+          include: {
             business: true,
           },
         },
@@ -111,17 +113,20 @@ async function processSms(visit: any, smsType: 'reminder' | 'review', results: a
 
       // Mark as failed with reason
       const statusField = smsType === 'reminder' ? 'reminderSmsStatus' : 'reviewSmsStatus';
-      await db.update(visits)
-        .set({ [statusField]: 'failed', updatedAt: new Date() })
-        .where(eq(visits.id, visit.id));
+      await db.visit.update({
+        where: { id: visit.id },
+        data: { [statusField]: 'failed' },
+      });
 
-      await db.insert(smsLogs).values({
-        visitId: visit.id,
-        smsType,
-        phone: customer.phone,
-        message: '',
-        status: 'failed',
-        errorMessage: 'Customer has not consented to SMS',
+      await db.smsLog.create({
+        data: {
+          visitId: visit.id,
+          smsType,
+          phone: customer.phone,
+          message: '',
+          status: 'failed',
+          errorMessage: 'Customer has not consented to SMS',
+        },
       });
 
       return;
@@ -133,17 +138,20 @@ async function processSms(visit: any, smsType: 'reminder' | 'review', results: a
       results.errors.push({ visitId: visit.id, type: smsType, error: 'No SMS configuration' });
 
       const statusField = smsType === 'reminder' ? 'reminderSmsStatus' : 'reviewSmsStatus';
-      await db.update(visits)
-        .set({ [statusField]: 'failed', updatedAt: new Date() })
-        .where(eq(visits.id, visit.id));
+      await db.visit.update({
+        where: { id: visit.id },
+        data: { [statusField]: 'failed' },
+      });
 
-      await db.insert(smsLogs).values({
-        visitId: visit.id,
-        smsType,
-        phone: customer.phone,
-        message: '',
-        status: 'failed',
-        errorMessage: 'Business SMS provider not configured',
+      await db.smsLog.create({
+        data: {
+          visitId: visit.id,
+          smsType,
+          phone: customer.phone,
+          message: '',
+          status: 'failed',
+          errorMessage: 'Business SMS provider not configured',
+        },
       });
 
       results[`${smsType}Sms`].failed++;
@@ -157,9 +165,10 @@ async function processSms(visit: any, smsType: 'reminder' | 'review', results: a
       results.errors.push({ visitId: visit.id, type: smsType, error: 'Template not configured' });
 
       const statusField = smsType === 'reminder' ? 'reminderSmsStatus' : 'reviewSmsStatus';
-      await db.update(visits)
-        .set({ [statusField]: 'failed', updatedAt: new Date() })
-        .where(eq(visits.id, visit.id));
+      await db.visit.update({
+        where: { id: visit.id },
+        data: { [statusField]: 'failed' },
+      });
 
       results[`${smsType}Sms`].failed++;
       return;
@@ -178,23 +187,26 @@ async function processSms(visit: any, smsType: 'reminder' | 'review', results: a
     // Create SMS provider
     let smsProvider;
     try {
-      smsProvider = SmsProviderFactory.create(business.smsProvider, business.smsConfig);
+      smsProvider = SmsProviderFactory.create(business.smsProvider as any, business.smsConfig as any);
     } catch (error) {
       console.error(`[CRON] Failed to create SMS provider:`, error);
       results.errors.push({ visitId: visit.id, type: smsType, error: 'Provider creation failed' });
 
       const statusField = smsType === 'reminder' ? 'reminderSmsStatus' : 'reviewSmsStatus';
-      await db.update(visits)
-        .set({ [statusField]: 'failed', updatedAt: new Date() })
-        .where(eq(visits.id, visit.id));
+      await db.visit.update({
+        where: { id: visit.id },
+        data: { [statusField]: 'failed' },
+      });
 
-      await db.insert(smsLogs).values({
-        visitId: visit.id,
-        smsType,
-        phone: customer.phone,
-        message,
-        status: 'failed',
-        errorMessage: error instanceof Error ? error.message : 'Provider creation failed',
+      await db.smsLog.create({
+        data: {
+          visitId: visit.id,
+          smsType,
+          phone: customer.phone,
+          message,
+          status: 'failed',
+          errorMessage: error instanceof Error ? error.message : 'Provider creation failed',
+        },
       });
 
       results[`${smsType}Sms`].failed++;
@@ -208,19 +220,22 @@ async function processSms(visit: any, smsType: 'reminder' | 'review', results: a
     } catch (error) {
       console.error(`[CRON] SMS sending error:`, error);
 
-      await db.insert(smsLogs).values({
-        visitId: visit.id,
-        smsType,
-        phone: customer.phone,
-        message,
-        status: 'failed',
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      await db.smsLog.create({
+        data: {
+          visitId: visit.id,
+          smsType,
+          phone: customer.phone,
+          message,
+          status: 'failed',
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        },
       });
 
       const statusField = smsType === 'reminder' ? 'reminderSmsStatus' : 'reviewSmsStatus';
-      await db.update(visits)
-        .set({ [statusField]: 'failed', updatedAt: new Date() })
-        .where(eq(visits.id, visit.id));
+      await db.visit.update({
+        where: { id: visit.id },
+        data: { [statusField]: 'failed' },
+      });
 
       results.errors.push({ visitId: visit.id, type: smsType, error: 'Sending failed' });
       results[`${smsType}Sms`].failed++;
@@ -230,25 +245,35 @@ async function processSms(visit: any, smsType: 'reminder' | 'review', results: a
     // Success!
     console.log(`[CRON] ${smsType} SMS sent successfully for visit ${visit.id}`);
 
-    await db.insert(smsLogs).values({
-      visitId: visit.id,
-      smsType,
-      phone: customer.phone,
-      message,
-      status: 'sent',
-      smsapiMessageId: smsResult.messageId || null,
-      cost: smsResult.cost || null,
+    await db.smsLog.create({
+      data: {
+        visitId: visit.id,
+        smsType,
+        phone: customer.phone,
+        message,
+        status: 'sent',
+        smsapiMessageId: smsResult.messageId || null,
+        cost: smsResult.cost || null,
+      },
     });
 
     const now = new Date();
     if (smsType === 'reminder') {
-      await db.update(visits)
-        .set({ reminderSmsStatus: 'sent', reminderSmsSentAt: now, updatedAt: now })
-        .where(eq(visits.id, visit.id));
+      await db.visit.update({
+        where: { id: visit.id },
+        data: {
+          reminderSmsStatus: 'sent',
+          reminderSmsSentAt: now,
+        },
+      });
     } else {
-      await db.update(visits)
-        .set({ reviewSmsStatus: 'sent', reviewSmsSentAt: now, updatedAt: now })
-        .where(eq(visits.id, visit.id));
+      await db.visit.update({
+        where: { id: visit.id },
+        data: {
+          reviewSmsStatus: 'sent',
+          reviewSmsSentAt: now,
+        },
+      });
     }
 
     results[`${smsType}Sms`].sent++;

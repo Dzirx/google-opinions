@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { businesses, customers } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
 
 // GET - List all customers for business
 export async function GET() {
@@ -13,8 +11,8 @@ export async function GET() {
     }
 
     // Get user's business
-    const userBusiness = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const userBusiness = await db.business.findUnique({
+      where: { userId: session.user.id },
     });
 
     if (!userBusiness) {
@@ -22,12 +20,12 @@ export async function GET() {
     }
 
     // Get all customers for business
-    const allCustomers = await db.query.customers.findMany({
-      where: eq(customers.businessId, userBusiness.id),
-      orderBy: (customers, { desc }) => [desc(customers.createdAt)],
-      with: {
+    const allCustomers = await db.customer.findMany({
+      where: { businessId: userBusiness.id },
+      include: {
         visits: true,
       },
+      orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json({ customers: allCustomers });
@@ -45,8 +43,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const userBusiness = await db.business.findUnique({
+      where: { userId: session.user.id },
     });
 
     if (!userBusiness) {
@@ -84,11 +82,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Check for duplicate phone in same business
-    const existingCustomer = await db.query.customers.findFirst({
-      where: and(
-        eq(customers.businessId, userBusiness.id),
-        eq(customers.phone, phone)
-      ),
+    const existingCustomer = await db.customer.findFirst({
+      where: {
+        businessId: userBusiness.id,
+        phone: phone,
+      },
     });
 
     if (existingCustomer) {
@@ -96,14 +94,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Create customer
-    const [newCustomer] = await db.insert(customers).values({
-      businessId: userBusiness.id,
-      name,
-      surname,
-      phone,
-      email: email || null,
-      smsConsent: smsConsent !== undefined ? smsConsent : true,
-    }).returning();
+    const newCustomer = await db.customer.create({
+      data: {
+        businessId: userBusiness.id,
+        name,
+        surname,
+        phone,
+        email: email || null,
+        smsConsent: smsConsent !== undefined ? smsConsent : true,
+      },
+    });
 
     return NextResponse.json({ customer: newCustomer }, { status: 201 });
   } catch (error) {
@@ -120,8 +120,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const userBusiness = await db.business.findUnique({
+      where: { userId: session.user.id },
     });
 
     if (!userBusiness) {
@@ -136,11 +136,11 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Verify customer belongs to this business
-    const customer = await db.query.customers.findFirst({
-      where: and(
-        eq(customers.id, id),
-        eq(customers.businessId, userBusiness.id)
-      ),
+    const customer = await db.customer.findFirst({
+      where: {
+        id: id,
+        businessId: userBusiness.id,
+      },
     });
 
     if (!customer) {
@@ -163,11 +163,11 @@ export async function PATCH(req: NextRequest) {
       }
 
       // Check for duplicate phone (excluding current customer)
-      const existingCustomer = await db.query.customers.findFirst({
-        where: and(
-          eq(customers.businessId, userBusiness.id),
-          eq(customers.phone, phone)
-        ),
+      const existingCustomer = await db.customer.findFirst({
+        where: {
+          businessId: userBusiness.id,
+          phone: phone,
+        },
       });
 
       if (existingCustomer && existingCustomer.id !== id) {
@@ -183,17 +183,16 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Update customer
-    const [updatedCustomer] = await db.update(customers)
-      .set({
-        name: name || customer.name,
-        surname: surname || customer.surname,
-        phone: phone || customer.phone,
-        email: email !== undefined ? email : customer.email,
-        smsConsent: smsConsent !== undefined ? smsConsent : customer.smsConsent,
-        updatedAt: new Date(),
-      })
-      .where(eq(customers.id, id))
-      .returning();
+    const updatedCustomer = await db.customer.update({
+      where: { id: id },
+      data: {
+        ...(name && { name }),
+        ...(surname && { surname }),
+        ...(phone && { phone }),
+        ...(email !== undefined && { email }),
+        ...(smsConsent !== undefined && { smsConsent }),
+      },
+    });
 
     return NextResponse.json({ customer: updatedCustomer });
   } catch (error) {
@@ -210,8 +209,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.query.businesses.findFirst({
-      where: eq(businesses.userId, session.user.id),
+    const userBusiness = await db.business.findUnique({
+      where: { userId: session.user.id },
     });
 
     if (!userBusiness) {
@@ -226,11 +225,11 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Verify customer belongs to this business
-    const customer = await db.query.customers.findFirst({
-      where: and(
-        eq(customers.id, id),
-        eq(customers.businessId, userBusiness.id)
-      ),
+    const customer = await db.customer.findFirst({
+      where: {
+        id: id,
+        businessId: userBusiness.id,
+      },
     });
 
     if (!customer) {
@@ -238,7 +237,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Delete customer (cascade deletes visits, reviews, sms_logs)
-    await db.delete(customers).where(eq(customers.id, id));
+    await db.customer.delete({
+      where: { id: id },
+    });
 
     return NextResponse.json({ message: 'Customer deleted successfully' });
   } catch (error) {

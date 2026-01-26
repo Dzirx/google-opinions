@@ -1,8 +1,6 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema/users';
-import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -24,8 +22,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        const user = await db.query.users.findFirst({
-          where: eq(users.email, credentials.email as string),
+        const user = await db.user.findUnique({
+          where: { email: credentials.email as string },
         });
 
         if (!user) {
@@ -44,8 +42,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return {
           id: user.id,
           email: user.email,
-          name: user.name,
-          role: user.role,
+          name: user.name || '',
+          role: user.role as 'admin' | 'user',
         };
       },
     }),

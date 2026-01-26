@@ -1,6 +1,4 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from './schema';
+import { PrismaClient } from '@prisma/client';
 
 // Try to load .env.local if DATABASE_URL is not set (for standalone scripts)
 if (!process.env.DATABASE_URL) {
@@ -13,10 +11,25 @@ if (!process.env.DATABASE_URL) {
   }
 }
 
+// Validate DATABASE_URL is set
 if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not set');
+  throw new Error('DATABASE_URL is not set. Please configure it in .env.local');
 }
 
-// Connection for queries
-const client = postgres(process.env.DATABASE_URL);
-export const db = drizzle(client, { schema });
+// Global Prisma client instance (singleton pattern)
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+// Create Prisma client
+export const db = globalForPrisma.prisma ?? new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+});
+
+// Prevent multiple instances in development (hot reload)
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = db;
+}
+
+// Export Prisma client as default
+export default db;

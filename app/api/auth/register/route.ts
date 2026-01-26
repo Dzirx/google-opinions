@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema/users';
-import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
 export async function POST(req: NextRequest) {
@@ -23,8 +21,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.email, email),
+    const existingUser = await db.user.findUnique({
+      where: { email },
     });
 
     if (existingUser) {
@@ -36,15 +34,14 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const [newUser] = await db
-      .insert(users)
-      .values({
+    const newUser = await db.user.create({
+      data: {
         name,
         email,
         passwordHash,
         role: 'user',
-      })
-      .returning();
+      },
+    });
 
     return NextResponse.json(
       {

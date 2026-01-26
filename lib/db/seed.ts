@@ -1,6 +1,4 @@
 import { db } from './index';
-import { users } from './schema/users';
-import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
 async function seed() {
@@ -23,9 +21,9 @@ async function seed() {
   }
 
   try {
-    // Check if ANY admin exists (Option 2)
-    const existingAdmin = await db.query.users.findFirst({
-      where: eq(users.role, 'admin'),
+    // Check if ANY admin exists
+    const existingAdmin = await db.user.findFirst({
+      where: { role: 'admin' },
     });
 
     if (existingAdmin) {
@@ -36,8 +34,8 @@ async function seed() {
       process.exit(0);
     }
 
-    // No admin found - check if database is empty (Option 4)
-    const allUsers = await db.query.users.findMany();
+    // No admin found - check if database is empty
+    const allUsers = await db.user.findMany();
 
     if (allUsers.length === 0) {
       // Database is empty - safe to create root admin
@@ -54,15 +52,14 @@ async function seed() {
     // Create root admin from ENV
     const passwordHash = await bcrypt.hash(rootPassword, 10);
 
-    const [newUser] = await db
-      .insert(users)
-      .values({
+    const newUser = await db.user.create({
+      data: {
         email: rootEmail,
         passwordHash,
         name: rootName,
         role: 'admin',
-      })
-      .returning();
+      },
+    });
 
     console.log('✅ Root admin created!');
     console.log(`   Email: ${newUser.email}`);
