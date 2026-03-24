@@ -15,9 +15,7 @@ Open-source SaaS for automatically sending SMS requests for Google Reviews.
 
 - **Frontend**: Next.js 16, TypeScript, Tailwind CSS 4
 - **Backend**: Next.js API Routes, Prisma ORM
-- **Database**: PostgreSQL or MSSQL (choose one - just change connection string!)
-  - PostgreSQL: Neon for cloud, Docker for self-hosted
-  - MSSQL: SQL Server 2022, Azure SQL
+- **Database**: PostgreSQL (Neon for cloud, Docker for self-hosted)
 - **Auth**: NextAuth.js v5
 - **SMS**: Universal provider support (SMSAPI.pl, Twilio, Vonage, extensible)
 
@@ -31,9 +29,9 @@ git clone https://github.com/dzirx/google-opinion.git
 cd google-opinion
 ```
 
-2. **Create `.env.local`** (copy from `.env.example`)
+2. **Create `.env.local`** (copy from `.env`)
 ```bash
-cp .env.example .env.local
+cp .env .env.local
 ```
 
 3. **Generate secrets**
@@ -52,11 +50,7 @@ openssl rand -base64 32
 
 5. **Start the application**
 ```bash
-# Full stack (app + database)
-docker-compose -f docker/docker-compose.yml up
-
-# Only database (for local development)
-docker-compose -f docker/docker-compose.yml up db
+docker-compose up
 ```
 
 6. **Run migrations** (in another terminal)
@@ -78,7 +72,7 @@ npm install
 
 2. **Start PostgreSQL** (via Docker)
 ```bash
-docker-compose -f docker/docker-compose.yml up db
+docker-compose up db
 ```
 
 3. **Create `.env.local`** (same as Docker Option 1, step 2-4)
@@ -121,31 +115,21 @@ npm run lint             # Run ESLint
 
 ### Environment Variables
 
-See `.env.example` for all available options.
+See `.env` for all available options.
 
 **Required:**
-- `DATABASE_URL` - PostgreSQL or MSSQL connection string (see below)
+- `DATABASE_URL` - PostgreSQL connection string
 - `NEXTAUTH_SECRET` - Secret for JWT encryption
 - `CRON_SECRET` - Secret for cron endpoints
 
 **SMS Provider:**
 - SMS providers (SMSAPI.pl, Twilio, Vonage) are configured in the **dashboard**
 
-### Database Support (PostgreSQL or MSSQL)
+### Database (PostgreSQL)
 
-This application supports **both PostgreSQL and Microsoft SQL Server**! Just change the connection string:
-
-**PostgreSQL (default):**
 ```bash
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/google_opinion"
 ```
-
-**Microsoft SQL Server:**
-```bash
-DATABASE_URL="sqlserver://localhost:1433;database=google_opinion;user=sa;password=YourPassword;encrypt=false;trustServerCertificate=true"
-```
-
-📖 **Full guide:** See [README_BAZY_DANYCH.md](./README_BAZY_DANYCH.md) for step-by-step instructions on switching databases.
 
 ## 🤝 Contributing
 

@@ -1,12 +1,11 @@
-// Prisma schema file - supports both PostgreSQL and MSSQL
-// Set database provider via DATABASE_URL environment variable
+// Prisma schema file - PostgreSQL
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // Auto-detected from DATABASE_URL (postgresql or sqlserver)
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

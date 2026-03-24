@@ -18,10 +18,8 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
-    "@types/mssql": "^9.1.9",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.2.3",
-    "mssql": "^12.2.0",
     "next": "16.1.1",
     "next-auth": "^5.0.0-beta.30",
     "react": "19.2.3",
