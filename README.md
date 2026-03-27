@@ -1,23 +1,20 @@
-# 🚀 Google Opinion - Automated SMS Review Requests
+# OptykCRM
 
-Open-source SaaS for automatically sending SMS requests for Google Reviews.
+System CRM dla salonów optycznych. Zarządzanie klientami, wizytami, zleceniami optycznymi oraz automatyczne wysyłanie SMS z prośbą o opinię Google.
 
-## ✨ Features
+## Funkcje
 
-- 📅 **Customer & Visit Management** - Track customers and their visits, import via CSV
-- 📱 **Dual SMS Flow** - Send reminder SMS before visit + review request SMS after visit
-- 🌍 **Universal SMS Sending** - Support for multiple SMS providers (SMSAPI.pl, Twilio, Vonage)
-- 📊 **Dashboard** - Track SMS status, view statistics
-- 🐳 **Docker Ready** - One-command deployment
-- 🔐 **Secure** - NextAuth.js authentication, encrypted credentials
+- **Klienci** — baza klientów z danymi kontaktowymi i zgodą SMS
+- **Wizyty** — rejestracja wizyt, automatyczne SMS przypomnienia i prośby o opinię Google
+- **Zlecenia optyczne** — zarządzanie zleceniami z receptą (OP/OL), oprawkami, szkłami i soczewkami kontaktowymi
+- **Wiadomości grupowe** — wysyłka SMS do wybranych klientów z filtrami (zgoda, liczba wizyt, data wizyty)
+- **Integracja SMS** — obsługa SMSAPI, SMSPlanet, Twilio, Vonage
 
-## 🛠️ Tech Stack
+## Stack
 
-- **Frontend**: Next.js 16, TypeScript, Tailwind CSS 4
-- **Backend**: Next.js API Routes, Prisma ORM
-- **Database**: PostgreSQL (Neon for cloud, Docker for self-hosted)
-- **Auth**: NextAuth.js v5
-- **SMS**: Universal provider support (SMSAPI.pl, Twilio, Vonage, extensible)
+- **Frontend/Backend** — Next.js 16, TypeScript, Tailwind CSS
+- **Baza danych** — PostgreSQL + Prisma ORM
+- **Autentykacja** — NextAuth.js v5
 
 ## 🚀 Quick Start
 
