@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 interface Business {
   id: string;
@@ -17,6 +18,7 @@ interface Business {
 }
 
 export default function AdminBusinessesPage() {
+  const { t } = useLanguage();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -34,7 +36,7 @@ export default function AdminBusinessesPage() {
 
       if (!response.ok) {
         if (response.status === 403) {
-          setError('Access denied - Admin privileges required');
+          setError(t('adminAccessDenied'));
           return;
         }
         throw new Error(data.error || 'Failed to fetch businesses');
@@ -62,9 +64,9 @@ export default function AdminBusinessesPage() {
   return (
     <div className="px-4 py-6 sm:px-0">
       <div className="border-b border-gray-200 pb-5">
-        <h1 className="text-3xl font-bold text-gray-900">Admin - All Businesses</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('adminAllBusinesses')}</h1>
         <p className="mt-2 text-sm text-gray-500">
-          View and manage all businesses in the system
+          {t('adminAllBusinessesSubtitle')}
         </p>
       </div>
 
@@ -88,7 +90,7 @@ export default function AdminBusinessesPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Businesses</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('totalBusinesses')}</dt>
                     <dd className="text-3xl font-semibold text-gray-900">{businesses.length}</dd>
                   </dl>
                 </div>
@@ -106,7 +108,7 @@ export default function AdminBusinessesPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Customers</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('adminTotalCustomers')}</dt>
                     <dd className="text-3xl font-semibold text-gray-900">
                       {businesses.reduce((sum, b) => sum + b.customerCount, 0)}
                     </dd>
@@ -126,7 +128,7 @@ export default function AdminBusinessesPage() {
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Active SMS Providers</dt>
+                    <dt className="text-sm font-medium text-gray-500 truncate">{t('adminActiveSmsProviders')}</dt>
                     <dd className="text-3xl font-semibold text-gray-900">
                       {businesses.filter(b => b.smsProvider).length}
                     </dd>
@@ -141,22 +143,22 @@ export default function AdminBusinessesPage() {
       {/* Table */}
       <div className="mt-6 bg-white shadow overflow-hidden rounded-lg">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading businesses...</div>
+          <div className="p-8 text-center text-gray-500">{t('adminLoadingBusinesses')}</div>
         ) : businesses.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            No businesses found in the system.
+            {t('adminNoBusinessesFound')}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SMS Provider</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customers</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('businesses')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('adminOwner')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('adminContact')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('adminSmsProvider')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('customers')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('adminCreated')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -164,7 +166,7 @@ export default function AdminBusinessesPage() {
                   <tr key={business.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{business.name}</div>
-                      <div className="text-sm text-gray-500">{business.phone || 'No phone'}</div>
+                      <div className="text-sm text-gray-500">{business.phone || t('adminNoPhone')}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{business.userName}</div>
@@ -177,7 +179,7 @@ export default function AdminBusinessesPage() {
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:text-blue-900 underline"
                       >
-                        Google Review
+                        {t('adminGoogleReview')}
                       </a>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -186,7 +188,7 @@ export default function AdminBusinessesPage() {
                           {business.smsProvider.toUpperCase()}
                         </span>
                       ) : (
-                        <span className="text-sm text-gray-400">Not configured</span>
+                        <span className="text-sm text-gray-400">{t('adminSmsNotConfigured')}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

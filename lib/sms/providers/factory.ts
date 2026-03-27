@@ -2,6 +2,7 @@ import { ISmsProvider, SmsProviderConfig } from './interface';
 import { SmsApiProvider } from './smsapi';
 import { TwilioProvider } from './twilio';
 import { VonageProvider } from './vonage';
+import { SmsPlanetProvider } from './smsplanet';
 import { SmsProvider } from '@/lib/db/types';
 
 /**
@@ -19,8 +20,10 @@ export class SmsProviderFactory {
       case 'vonage':
         return new VonageProvider(config);
 
+      case 'smsplanet':
+        return new SmsPlanetProvider(config);
+
       case 'aws-sns':
-        // TODO: Implement AWS SNS provider
         throw new Error('AWS SNS provider not implemented yet');
 
       default:
@@ -63,6 +66,16 @@ export class SmsProviderFactory {
           { name: 'apiKey', label: 'API Key', type: 'text' },
           { name: 'apiSecret', label: 'API Secret', type: 'password' },
           { name: 'sender', label: 'Sender Name', type: 'text', maxLength: 11 },
+        ],
+      },
+      {
+        id: 'smsplanet',
+        name: 'SMSPlanet',
+        description: 'Polska',
+        website: 'https://smsplanet.pl',
+        requiredFields: [
+          { name: 'apiKey', label: 'Token API', type: 'password' },
+          { name: 'sender', label: 'Nazwa nadawcy', type: 'text', maxLength: 11 },
         ],
       },
       // {

@@ -50,7 +50,7 @@ export default function LoginPage() {
                 </svg>
               </div>
               <span className="text-lg font-bold text-gray-900">
-                OpinionFlow
+                OptykCRM
               </span>
             </Link>
 

@@ -20,7 +20,7 @@ export function DashboardSidebar({ userEmail, userRole, signOutAction }: Dashboa
         {/* Logo */}
         <div className="p-6 border-b">
           <Link href="/dashboard" className="text-2xl font-bold text-blue-600">
-            OpinionFlow
+            OptykCRM
           </Link>
         </div>
 
@@ -34,6 +34,12 @@ export function DashboardSidebar({ userEmail, userRole, signOutAction }: Dashboa
           </NavLink>
           <NavLink href="/visits">
             {t('visits')}
+          </NavLink>
+          <NavLink href="/work-orders">
+            {t('workOrders')}
+          </NavLink>
+          <NavLink href="/messages">
+            {t('messages')}
           </NavLink>
           {userRole === 'admin' && (
             <NavLink href="/admin/businesses">

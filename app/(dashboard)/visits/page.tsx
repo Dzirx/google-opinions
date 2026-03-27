@@ -50,7 +50,6 @@ export default function VisitsPage() {
     visitType: '',
     notes: '',
     reminderSmsDate: '',
-    reviewSmsDate: '',
   });
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
@@ -172,7 +171,7 @@ export default function VisitsPage() {
       }
 
       setShowAddModal(false);
-      setFormData({ customerId: '', visitDate: '', visitType: '', notes: '', reminderSmsDate: '', reviewSmsDate: '' });
+      setFormData({ customerId: '', visitDate: '', visitType: '', notes: '', reminderSmsDate: '' });
       setShowNewCustomerForm(false);
       setCustomerSearch('');
       setNewCustomerData({ name: '', surname: '', phone: '', email: '', smsConsent: true });
@@ -208,7 +207,7 @@ export default function VisitsPage() {
       }
 
       setEditingVisit(null);
-      setFormData({ customerId: '', visitDate: '', visitType: '', notes: '', reminderSmsDate: '', reviewSmsDate: '' });
+      setFormData({ customerId: '', visitDate: '', visitType: '', notes: '', reminderSmsDate: '' });
       fetchVisits();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Failed to update visit');
@@ -265,7 +264,6 @@ export default function VisitsPage() {
       visitType: visit.visitType || '',
       notes: visit.notes || '',
       reminderSmsDate: visit.reminderSmsDate ? visit.reminderSmsDate.split('T')[0] + 'T' + visit.reminderSmsDate.split('T')[1].substring(0, 5) : '',
-      reviewSmsDate: visit.reviewSmsDate ? visit.reviewSmsDate.split('T')[0] + 'T' + visit.reviewSmsDate.split('T')[1].substring(0, 5) : '',
     });
   };
 
@@ -413,7 +411,7 @@ export default function VisitsPage() {
                 <button
                   onClick={goToPreviousMonth}
                   className="px-1.5 py-0.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-xs"
-                  title="Previous month"
+                  title={t('previousMonth')}
                 >
                   ←
                 </button>
@@ -423,7 +421,7 @@ export default function VisitsPage() {
                 <button
                   onClick={goToNextMonth}
                   className="px-1.5 py-0.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-xs"
-                  title="Next month"
+                  title={t('nextMonth')}
                 >
                   →
                 </button>
@@ -582,23 +580,19 @@ export default function VisitsPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {visit.reviewSmsDate ? (
-                      <div>
-                        <div className="text-sm text-gray-500">{new Date(visit.reviewSmsDate).toLocaleString()}</div>
-                        <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(visit.reviewSmsStatus)}`}>
-                          {visit.reviewSmsStatus}
-                        </span>
-                        {visit.reviewSmsStatus === 'pending' && visit.smsConsent && (
-                          <button
-                            onClick={() => handleSendSms(visit.id, 'review')}
-                            className="ml-2 text-blue-600 hover:text-blue-900 text-xs"
-                          >
-                            {t('send')}
-                          </button>
-                        )}
-                      </div>
+                    {visit.reviewSmsStatus === 'sent' ? (
+                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                        {t('reviewSmsSent')}
+                      </span>
+                    ) : !visit.smsConsent ? (
+                      <span className="text-gray-400 text-xs">{t('reviewSmsNoConsent')}</span>
                     ) : (
-                      <span className="text-gray-400">-</span>
+                      <button
+                        onClick={() => handleSendSms(visit.id, 'review')}
+                        className="px-3 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      >
+                        {t('sendReviewSms')}
+                      </button>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -841,16 +835,6 @@ export default function VisitsPage() {
                     style={{ color: '#000000' }}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">{t('reviewSmsDateOptional')}</label>
-                  <input
-                    type="datetime-local"
-                    value={formData.reviewSmsDate}
-                    onChange={(e) => setFormData({ ...formData, reviewSmsDate: e.target.value })}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
-                    style={{ color: '#000000' }}
-                  />
-                </div>
               </div>
 
               {formError && (
@@ -865,7 +849,7 @@ export default function VisitsPage() {
                   onClick={() => {
                     setShowAddModal(false);
                     setEditingVisit(null);
-                    setFormData({ customerId: '', visitDate: '', visitType: '', notes: '', reminderSmsDate: '', reviewSmsDate: '' });
+                    setFormData({ customerId: '', visitDate: '', visitType: '', notes: '', reminderSmsDate: '' });
                     setFormError('');
                     setShowNewCustomerForm(false);
                     setCustomerSearch('');

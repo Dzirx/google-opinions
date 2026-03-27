@@ -3,7 +3,7 @@
  */
 
 // SMS Provider types
-export type SmsProvider = 'smsapi' | 'twilio' | 'vonage' | 'aws-sns';
+export type SmsProvider = 'smsapi' | 'twilio' | 'vonage' | 'smsplanet' | 'aws-sns';
 
 // SMS Config type (matches Prisma Json type)
 export type SmsConfig = Record<string, any>;

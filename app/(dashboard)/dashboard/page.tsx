@@ -15,77 +15,110 @@ export default async function DashboardPage() {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
 
   let stats = {
     totalCustomers: 0,
-    totalVisits: 0,
-    upcomingVisits: 0,
-    remindersSent: 0,
-    reviewsSent: 0,
+    visitsToday: 0,
     smsPending: 0,
+    readyOrders: 0,
   };
 
-  let recentVisits: any[] = [];
+  let recentVisits: {
+    id: string;
+    customerName: string;
+    visitDate: string;
+    visitType: string | null;
+    reminderSmsStatus: string | null;
+    reviewSmsStatus: string | null;
+    reminderSmsDate: string | null;
+    reviewSmsDate: string | null;
+  }[] = [];
+
+  let readyWorkOrders: {
+    id: string;
+    orderNumber: string;
+    customerName: string;
+    dueAt: string | null;
+    totalAmount: string | null;
+  }[] = [];
 
   if (userBusiness) {
-    // Get all customers
-    const allCustomers = await db.customer.findMany({
-      where: { businessId: userBusiness.id },
-      include: {
-        visits: {
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-    });
+    const [totalCustomers, visitsToday, reminderPending, reviewPending, readyOrdersCount] =
+      await Promise.all([
+        db.customer.count({ where: { businessId: userBusiness.id } }),
+        db.visit.count({
+          where: {
+            customer: { businessId: userBusiness.id },
+            visitDate: { gte: today, lt: tomorrow },
+          },
+        }),
+        db.visit.count({
+          where: {
+            customer: { businessId: userBusiness.id },
+            reminderSmsStatus: 'pending',
+            reminderSmsDate: { not: null },
+          },
+        }),
+        db.visit.count({
+          where: {
+            customer: { businessId: userBusiness.id },
+            reviewSmsStatus: 'pending',
+            reviewSmsDate: { not: null },
+          },
+        }),
+        db.workOrder.count({
+          where: { businessId: userBusiness.id, status: 'ready' },
+        }),
+      ]);
 
-    stats.totalCustomers = allCustomers.length;
+    stats.totalCustomers = totalCustomers;
+    stats.visitsToday = visitsToday;
+    stats.smsPending = reminderPending + reviewPending;
+    stats.readyOrders = readyOrdersCount;
 
-    // Flatten all visits
-    const allVisits = allCustomers.flatMap(customer =>
-      customer.visits.map(visit => ({
-        ...visit,
-        customerName: `${customer.name} ${customer.surname}`,
-        customerPhone: customer.phone,
-      }))
-    );
+    const [recentVisitsRaw, readyOrdersRaw] = await Promise.all([
+      db.visit.findMany({
+        where: { customer: { businessId: userBusiness.id } },
+        include: { customer: true },
+        orderBy: { visitDate: 'desc' },
+        take: 6,
+      }),
+      db.workOrder.findMany({
+        where: { businessId: userBusiness.id, status: 'ready' },
+        include: { customer: true },
+        orderBy: { dueAt: 'asc' },
+        take: 6,
+      }),
+    ]);
 
-    stats.totalVisits = allVisits.length;
-    stats.upcomingVisits = allVisits.filter(
-      (v) => new Date(v.visitDate) >= today
-    ).length;
+    recentVisits = recentVisitsRaw.map((v) => ({
+      id: v.id,
+      customerName: `${v.customer.name} ${v.customer.surname}`,
+      visitDate: v.visitDate.toISOString(),
+      visitType: v.visitType,
+      reminderSmsStatus: v.reminderSmsStatus,
+      reviewSmsStatus: v.reviewSmsStatus,
+      reminderSmsDate: v.reminderSmsDate?.toISOString() ?? null,
+      reviewSmsDate: v.reviewSmsDate?.toISOString() ?? null,
+    }));
 
-    // SMS statistics (reminder + review)
-    stats.remindersSent = allVisits.filter(v => v.reminderSmsStatus === 'sent').length;
-    stats.reviewsSent = allVisits.filter(v => v.reviewSmsStatus === 'sent').length;
-    stats.smsPending = allVisits.filter(v =>
-      v.reminderSmsStatus === 'pending' || v.reviewSmsStatus === 'pending'
-    ).length;
-
-    // Recent 5 visits
-    recentVisits = allVisits
-      .sort((a, b) => new Date(b.visitDate).getTime() - new Date(a.visitDate).getTime())
-      .slice(0, 5);
+    readyWorkOrders = readyOrdersRaw.map((o) => ({
+      id: o.id,
+      orderNumber: o.orderNumber,
+      customerName: `${o.customer.name} ${o.customer.surname}`,
+      dueAt: o.dueAt?.toISOString() ?? null,
+      totalAmount: o.totalAmount?.toString() ?? null,
+    }));
   }
-
-  const totalSmsSent = stats.remindersSent + stats.reviewsSent;
-  const totalSmsOpportunities = stats.totalVisits * 2; // reminder + review per visit
-  const successRate = totalSmsOpportunities > 0
-    ? Math.round((totalSmsSent / totalSmsOpportunities) * 100)
-    : 0;
 
   return (
     <DashboardContent
       userName={session.user.name || session.user.email || 'User'}
-      stats={{
-        totalCustomers: stats.totalCustomers,
-        totalVisits: stats.totalVisits,
-        totalSmsSent,
-        smsPending: stats.smsPending,
-        successRate,
-        totalSmsOpportunities,
-        upcomingVisits: stats.upcomingVisits,
-      }}
+      stats={stats}
       recentVisits={recentVisits}
+      readyWorkOrders={readyWorkOrders}
     />
   );
 }
