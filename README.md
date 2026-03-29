@@ -1,22 +1,22 @@
 # OptykCRM
 
-System CRM dla salonów optycznych. Zarządzanie klientami, wizytami, zleceniami optycznymi oraz automatyczne wysyłanie SMS z prośbą o opinię Google.
+CRM system for optical salons. Manage customers, appointments, optical orders, and automatically send SMS requests for Google reviews.
 
-## Funkcje
+## Features
 
-- **Klienci** — baza klientów z danymi kontaktowymi i zgodą SMS
-- **Wizyty** — rejestracja wizyt, automatyczne SMS przypomnienia i prośby o opinię Google
-- **Zlecenia optyczne** — zarządzanie zleceniami z receptą (OP/OL), oprawkami, szkłami i soczewkami kontaktowymi
-- **Wiadomości grupowe** — wysyłka SMS do wybranych klientów z filtrami (zgoda, liczba wizyt, data wizyty)
-- **Integracja SMS** — obsługa SMSAPI, SMSPlanet, Twilio, Vonage
+- **Customers** — customer database with contact details and SMS consent
+- **Appointments** — appointment registration, automatic SMS reminders and Google review requests
+- **Optical orders** — manage orders with prescription (OD/OS), frames, lenses, and contact lenses
+- **Group messages** — bulk SMS to selected customers with filters (consent, visit count, visit date)
+- **SMS integration** — support for SMSAPI, SMSPlanet, Twilio, Vonage
 
 ## Stack
 
 - **Frontend/Backend** — Next.js 16, TypeScript, Tailwind CSS
-- **Baza danych** — PostgreSQL + Prisma ORM
-- **Autentykacja** — NextAuth.js v5
+- **Database** — PostgreSQL + Prisma ORM
+- **Authentication** — NextAuth.js v5
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Option 1: Docker (Recommended for Self-Hosting)
 
@@ -41,9 +41,9 @@ openssl rand -base64 32
 ```
 
 4. **Edit `.env.local`** and add your secrets:
-- `NEXTAUTH_SECRET` - Generated in step 3
-- `CRON_SECRET` - Generated in step 3
-- SMS provider will be configured in dashboard after login
+- `NEXTAUTH_SECRET` — generated in step 3
+- `CRON_SECRET` — generated in step 3
+- SMS provider is configured in the dashboard after login
 
 5. **Start the application**
 ```bash
@@ -55,7 +55,7 @@ docker-compose up
 npm run db:push
 ```
 
-7. **Open app**
+7. **Open the app**
 ```
 http://localhost:3000
 ```
@@ -72,7 +72,7 @@ npm install
 docker-compose up db
 ```
 
-3. **Create `.env.local`** (same as Docker Option 1, step 2-4)
+3. **Create `.env.local`** (same as Docker Option 1, steps 2–4)
 
 4. **Run migrations**
 ```bash
@@ -84,12 +84,12 @@ npm run db:push
 npm run dev
 ```
 
-6. **Open app**
+6. **Open the app**
 ```
 http://localhost:3000
 ```
 
-## 📦 Available Scripts
+## Available Scripts
 
 ```bash
 # Development
@@ -108,16 +108,17 @@ npm run start            # Start production server
 # Linting
 npm run lint             # Run ESLint
 ```
-## 🔧 Configuration
+
+## Configuration
 
 ### Environment Variables
 
 See `.env` for all available options.
 
 **Required:**
-- `DATABASE_URL` - PostgreSQL connection string
-- `NEXTAUTH_SECRET` - Secret for JWT encryption
-- `CRON_SECRET` - Secret for cron endpoints
+- `DATABASE_URL` — PostgreSQL connection string
+- `NEXTAUTH_SECRET` — Secret for JWT encryption
+- `CRON_SECRET` — Secret for cron endpoints
 
 **SMS Provider:**
 - SMS providers (SMSAPI.pl, Twilio, Vonage) are configured in the **dashboard**
@@ -128,13 +129,13 @@ See `.env` for all available options.
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/google_opinion"
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Contributions welcome! Fork the repo and submit a pull request.
 
-## 📝 License
+## License
 
-**Fair Source License** - Free for up to 200 customers per business.
+**Fair Source License** — Free for up to 200 customers per business.
 
 - ✅ **Free:** Use with up to 200 customers (end-users in database)
 - 💼 **Commercial:** For more than 200 customers, [contact us](https://github.com/dzirx/google-opinion/issues) for a commercial license
