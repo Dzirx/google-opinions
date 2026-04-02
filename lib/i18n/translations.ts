@@ -268,6 +268,8 @@ export const translations = {
     sendReviewSms: 'Wyślij opinię SMS',
     reviewSmsSent: 'Opinia wysłana',
     reviewSmsNoConsent: 'Brak zgody SMS',
+    sendReminderSms: 'Wyślij przypomnienie SMS',
+    reminderSmsSent: 'Przypomnienie wysłane',
     sending: 'Wysyłanie...',
   },
   en: {
@@ -539,6 +541,8 @@ export const translations = {
     sendReviewSms: 'Send Review SMS',
     reviewSmsSent: 'Review Sent',
     reviewSmsNoConsent: 'No SMS Consent',
+    sendReminderSms: 'Send Reminder SMS',
+    reminderSmsSent: 'Reminder Sent',
     sending: 'Sending...',
   },
 } as const;

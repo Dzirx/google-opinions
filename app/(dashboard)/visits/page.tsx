@@ -560,23 +560,19 @@ export default function VisitsPage() {
                     {visit.visitType || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {visit.reminderSmsDate ? (
-                      <div>
-                        <div className="text-sm text-gray-500">{new Date(visit.reminderSmsDate).toLocaleString()}</div>
-                        <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(visit.reminderSmsStatus)}`}>
-                          {visit.reminderSmsStatus}
-                        </span>
-                        {visit.reminderSmsStatus === 'pending' && visit.smsConsent && (
-                          <button
-                            onClick={() => handleSendSms(visit.id, 'reminder')}
-                            className="ml-2 text-blue-600 hover:text-blue-900 text-xs"
-                          >
-                            {t('send')}
-                          </button>
-                        )}
-                      </div>
+                    {visit.reminderSmsStatus === 'sent' ? (
+                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                        {t('reminderSmsSent')}
+                      </span>
+                    ) : !visit.smsConsent ? (
+                      <span className="text-gray-400 text-xs">{t('reviewSmsNoConsent')}</span>
                     ) : (
-                      <span className="text-gray-400">-</span>
+                      <button
+                        onClick={() => handleSendSms(visit.id, 'reminder')}
+                        className="px-3 py-1 text-xs bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                      >
+                        {t('sendReminderSms')}
+                      </button>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
