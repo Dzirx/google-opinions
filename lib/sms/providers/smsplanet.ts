@@ -34,13 +34,13 @@ export class SmsPlanetProvider implements ISmsProvider {
         body: params.toString(),
       });
 
-      const body = await response.text();
+      const data = await response.json();
 
-      if (!response.ok) {
-        return { success: false, error: body };
+      if (data.errorCode) {
+        return { success: false, error: `${data.errorMsg} (kod: ${data.errorCode})` };
       }
 
-      return { success: true, messageId: body };
+      return { success: true, messageId: String(data.messageId) };
     } catch (error) {
       return {
         success: false,
