@@ -88,6 +88,10 @@ export async function POST(req: NextRequest) {
       );
 
       smsResult = await smsProvider.sendSms(visit.customer.phone, message);
+
+      if (!smsResult.success) {
+        throw new Error(smsResult.error || 'SMS provider returned failure');
+      }
     } catch (smsError) {
       console.error('SMS sending failed:', smsError);
 

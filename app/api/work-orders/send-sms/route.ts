@@ -63,6 +63,10 @@ export async function POST(req: NextRequest) {
 
     const smsResult = await smsProvider.sendSms(workOrder.customer.phone, message);
 
+    if (!smsResult.success) {
+      throw new Error(smsResult.error || 'SMS provider returned failure');
+    }
+
     return NextResponse.json({
       message: 'Review SMS sent successfully',
       smsResult,
