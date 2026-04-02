@@ -29,8 +29,7 @@ export default function SettingsPage() {
     phone: '',
     googleReviewUrl: '',
     smsProvider: 'smsapi',
-    apiKey: '',
-    sender: '',
+    smsConfig: {} as Record<string, string>,
     reminderSmsTemplate: '',
     reviewSmsTemplate: '',
   });
@@ -51,8 +50,7 @@ export default function SettingsPage() {
           phone: data.business.phone || '',
           googleReviewUrl: data.business.googleReviewUrl,
           smsProvider: data.business.smsProvider || 'smsapi',
-          apiKey: data.business.smsConfig?.apiKey || '',
-          sender: data.business.smsConfig?.sender || '',
+          smsConfig: data.business.smsConfig || {},
           reminderSmsTemplate: data.business.reminderSmsTemplate || '',
           reviewSmsTemplate: data.business.reviewSmsTemplate || '',
         });
@@ -72,11 +70,6 @@ export default function SettingsPage() {
     setSuccess('');
 
     try {
-      const smsConfig = {
-        apiKey: formData.apiKey,
-        sender: formData.sender,
-      };
-
       const method = business ? 'PATCH' : 'POST';
       const response = await fetch('/api/business', {
         method,
@@ -86,7 +79,7 @@ export default function SettingsPage() {
           phone: formData.phone,
           googleReviewUrl: formData.googleReviewUrl,
           smsProvider: formData.smsProvider,
-          smsConfig,
+          smsConfig: formData.smsConfig,
           reminderSmsTemplate: formData.reminderSmsTemplate,
           reviewSmsTemplate: formData.reviewSmsTemplate,
         }),
@@ -132,8 +125,7 @@ export default function SettingsPage() {
         phone: '',
         googleReviewUrl: '',
         smsProvider: 'smsapi',
-        apiKey: '',
-        sender: '',
+        smsConfig: {},
         reminderSmsTemplate: '',
         reviewSmsTemplate: '',
       });
@@ -260,47 +252,37 @@ export default function SettingsPage() {
                 >
                   <option value="smsapi" className="text-gray-900">SMSAPI.pl</option>
                   <option value="smsplanet" className="text-gray-900">SMSPlanet</option>
-                  <option value="twilio" className="text-gray-900">Twilio</option>
-                  <option value="vonage" className="text-gray-900">Vonage</option>
-                  <option value="aws-sns" className="text-gray-900">AWS SNS</option>
                 </select>
               </div>
 
-              {formData.smsProvider === 'smsapi' && (
-                <>
-                  <div className="sm:col-span-4">
-                    <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700">
-                      {t('apiKeyToken')}
-                    </label>
-                    <input
-                      type="password"
-                      id="apiKey"
-                      value={formData.apiKey}
-                      onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border text-gray-900 bg-white"
-                      placeholder={t('apiKeyPlaceholder')}
-                    />
-                  </div>
-
-                  <div className="sm:col-span-4">
-                    <label htmlFor="sender" className="block text-sm font-medium text-gray-700">
-                      {t('senderName')}
-                    </label>
-                    <input
-                      type="text"
-                      id="sender"
-                      value={formData.sender}
-                      onChange={(e) => setFormData({ ...formData, sender: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border text-gray-900 bg-white"
-                      placeholder="MySalon"
-                      maxLength={11}
-                    />
-                    <p className="mt-2 text-sm text-gray-500">
-                      {t('senderNameHelp')}
-                    </p>
-                  </div>
-                </>
-              )}
+              {({
+                smsapi: [
+                  { name: 'apiKey', label: t('apiKeyToken'), type: 'password', placeholder: t('apiKeyPlaceholder') },
+                  { name: 'sender', label: t('senderName'), type: 'text', maxLength: 11, placeholder: 'MySalon', hint: t('senderNameHelp') },
+                ],
+                smsplanet: [
+                  { name: 'apiKey', label: 'Token API', type: 'password' },
+                  { name: 'sender', label: 'Nazwa nadawcy', type: 'text', maxLength: 11, placeholder: 'MySalon', hint: t('senderNameHelp') },
+                ],
+              } as Record<string, Array<{ name: string; label: string; type: string; maxLength?: number; placeholder?: string; hint?: string }>>)[formData.smsProvider]?.map((field) => (
+                <div key={field.name} className="sm:col-span-4">
+                  <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">
+                    {field.label}
+                  </label>
+                  <input
+                    type={field.type}
+                    id={field.name}
+                    value={formData.smsConfig[field.name] || ''}
+                    onChange={(e) => setFormData({ ...formData, smsConfig: { ...formData.smsConfig, [field.name]: e.target.value } })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border text-gray-900 bg-white"
+                    placeholder={field.placeholder}
+                    maxLength={field.maxLength}
+                  />
+                  {field.hint && (
+                    <p className="mt-2 text-sm text-gray-500">{field.hint}</p>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
