@@ -237,6 +237,10 @@ export const translations = {
     lensPrice: 'Cena szkieł',
     contactLensModel: 'Marka / model soczewek',
     contactLensPrice: 'Cena soczewek',
+    close: 'Zamknij',
+    lensItems: 'Pozycje',
+    frame: 'Oprawka',
+    lenses: 'Szkła',
 
     // Messages page
     messages: 'Wiadomości',
@@ -510,6 +514,10 @@ export const translations = {
     lensPrice: 'Lens Price',
     contactLensModel: 'Brand / model',
     contactLensPrice: 'Contact Lens Price',
+    close: 'Close',
+    lensItems: 'Items',
+    frame: 'Frame',
+    lenses: 'Lenses',
 
     // Messages page
     messages: 'Messages',

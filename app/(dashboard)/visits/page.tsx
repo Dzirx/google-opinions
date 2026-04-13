@@ -30,6 +30,13 @@ interface Customer {
   phone: string;
 }
 
+const toLocalDateStr = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 export default function VisitsPage() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
@@ -39,10 +46,9 @@ export default function VisitsPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState<'all' | 'reminder-pending' | 'review-pending'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(toLocalDateStr(new Date()));
 
   const [formData, setFormData] = useState({
     customerId: '',
@@ -295,7 +301,7 @@ export default function VisitsPage() {
     const url = URL.createObjectURL(blob);
 
     link.setAttribute('href', url);
-    link.setAttribute('download', `visits_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `visits_${toLocalDateStr(new Date())}.csv`);
     link.style.visibility = 'hidden';
 
     document.body.appendChild(link);
@@ -304,23 +310,23 @@ export default function VisitsPage() {
   };
 
   const goToToday = () => {
-    setSelectedDate(new Date().toISOString().split('T')[0]);
+    setSelectedDate(toLocalDateStr(new Date()));
   };
 
   const goToPreviousMonth = () => {
-    const date = new Date(selectedDate);
+    const date = new Date(selectedDate + 'T12:00:00');
     date.setMonth(date.getMonth() - 1);
-    setSelectedDate(date.toISOString().split('T')[0]);
+    setSelectedDate(toLocalDateStr(date));
   };
 
   const goToNextMonth = () => {
-    const date = new Date(selectedDate);
+    const date = new Date(selectedDate + 'T12:00:00');
     date.setMonth(date.getMonth() + 1);
-    setSelectedDate(date.toISOString().split('T')[0]);
+    setSelectedDate(toLocalDateStr(date));
   };
 
   const generateCalendarDays = () => {
-    const date = new Date(selectedDate);
+    const date = new Date(selectedDate + 'T12:00:00');
     const year = date.getFullYear();
     const month = date.getMonth();
 
@@ -345,9 +351,9 @@ export default function VisitsPage() {
   };
 
   const getVisitsCountForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = toLocalDateStr(date);
     return visits.filter(v => {
-      const visitDate = new Date(v.visitDate).toISOString().split('T')[0];
+      const visitDate = toLocalDateStr(new Date(v.visitDate));
       return visitDate === dateStr;
     }).length;
   };
@@ -355,14 +361,9 @@ export default function VisitsPage() {
   let filteredVisits = visits;
   if (filterCustomerId) {
     filteredVisits = visits.filter(v => v.customerId === filterCustomerId);
-  } else if (filter === 'reminder-pending') {
-    filteredVisits = visits.filter(v => v.reminderSmsStatus === 'pending');
-  } else if (filter === 'review-pending') {
-    filteredVisits = visits.filter(v => v.reviewSmsStatus === 'pending');
   } else {
-    // Filter by selected date only when showing 'all'
     filteredVisits = filteredVisits.filter(v => {
-      const visitDate = new Date(v.visitDate).toISOString().split('T')[0];
+      const visitDate = toLocalDateStr(new Date(v.visitDate));
       return visitDate === selectedDate;
     });
   }
@@ -416,7 +417,7 @@ export default function VisitsPage() {
                   ←
                 </button>
                 <h3 className="text-sm font-semibold text-gray-900 min-w-[120px] text-center">
-                  {new Date(selectedDate).toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })}
+                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })}
                 </h3>
                 <button
                   onClick={goToNextMonth}
@@ -452,9 +453,9 @@ export default function VisitsPage() {
                   return <div key={`empty-${index}`} className="w-8 h-8" />;
                 }
 
-                const dateStr = day.toISOString().split('T')[0];
+                const dateStr = toLocalDateStr(day);
                 const isSelected = dateStr === selectedDate;
-                const isToday = dateStr === new Date().toISOString().split('T')[0];
+                const isToday = dateStr === toLocalDateStr(new Date());
                 const visitsCount = getVisitsCountForDate(day);
 
                 return (
@@ -489,7 +490,7 @@ export default function VisitsPage() {
               <p className="text-center text-gray-600 text-xs">
                 <span className="font-semibold text-gray-900">{filteredVisits.length}</span> {filteredVisits.length === 1 ? t('visit') : t('visitsPlural')} {t('on')}{' '}
                 <span className="font-semibold text-blue-600">
-                  {new Date(selectedDate).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })}
+                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })}
                 </span>
               </p>
             </div>
@@ -498,28 +499,6 @@ export default function VisitsPage() {
 
         {/* Right side - Filters and Visits */}
         <div className="flex-1">
-          {!filterCustomerId && (
-            <div className="mb-4 flex gap-2">
-              <button
-                onClick={() => setFilter('all')}
-                className={`px-4 py-2 rounded-md ${filter === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}`}
-              >
-                {t('all')} ({visits.filter(v => new Date(v.visitDate).toISOString().split('T')[0] === selectedDate).length})
-              </button>
-              <button
-                onClick={() => setFilter('reminder-pending')}
-                className={`px-4 py-2 rounded-md ${filter === 'reminder-pending' ? 'bg-yellow-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              >
-                {t('pendingReminders')} ({visits.filter(v => v.reminderSmsStatus === 'pending').length})
-              </button>
-              <button
-                onClick={() => setFilter('review-pending')}
-                className={`px-4 py-2 rounded-md ${filter === 'review-pending' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              >
-                {t('pendingReviews')} ({visits.filter(v => v.reviewSmsStatus === 'pending').length})
-              </button>
-            </div>
-          )}
 
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -527,7 +506,7 @@ export default function VisitsPage() {
             </div>
           )}
 
-          <div className="bg-white shadow overflow-hidden rounded-lg overflow-x-auto">
+          <div className="bg-white shadow rounded-lg overflow-x-auto overflow-y-auto max-h-[600px]">
         {loading ? (
           <div className="p-8 text-center text-gray-500">{t('loadingVisits')}</div>
         ) : filteredVisits.length === 0 ? (

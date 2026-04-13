@@ -88,6 +88,7 @@ export default function WorkOrdersPage() {
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', surname: '', phone: '', email: '', smsConsent: true });
   const [sendingSmsId, setSendingSmsId] = useState<string | null>(null);
+  const [previewOrder, setPreviewOrder] = useState<WorkOrder | null>(null);
 
   useEffect(() => {
     fetchWorkOrders();
@@ -357,7 +358,14 @@ export default function WorkOrdersPage() {
             <tbody className="divide-y divide-gray-100">
               {filtered.map(order => (
                 <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-sm font-medium text-blue-700">{order.orderNumber}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => setPreviewOrder(order)}
+                      className="font-mono text-sm font-medium text-blue-700 hover:underline hover:text-blue-900 text-left"
+                    >
+                      {order.orderNumber}
+                    </button>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">{order.customerName}</div>
                     <div className="text-sm text-gray-500">{order.customerPhone}</div>
@@ -412,9 +420,121 @@ export default function WorkOrdersPage() {
         )}
       </div>
 
-      {/* Drawer */}
+      {/* Preview Modal */}
+      {previewOrder && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setPreviewOrder(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
+              <span className="font-mono text-lg font-bold text-blue-700">{previewOrder.orderNumber}</span>
+              <button onClick={() => setPreviewOrder(null)} className="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+            </div>
+
+            <div className="px-6 py-4 space-y-4">
+              {/* Klient */}
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <p className="text-xs text-gray-500 uppercase">{t('customer')}</p>
+                  <p className="font-medium text-gray-900">{previewOrder.customerName}</p>
+                  <p className="text-sm text-gray-500">{previewOrder.customerPhone}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase">{t('orderStatus')}</p>
+                  <span className={`mt-1 inline-block px-2 py-1 rounded-full text-xs font-medium ${statusColor(previewOrder.status)}`}>
+                    {statusLabel(previewOrder.status)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Daty + kwota */}
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase">{t('receivedAt')}</p>
+                  <p className="text-gray-900">{new Date(previewOrder.receivedAt).toLocaleDateString('pl-PL')}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase">{t('dueAt')}</p>
+                  <p className="text-gray-900">{previewOrder.dueAt ? new Date(previewOrder.dueAt).toLocaleDateString('pl-PL') : '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase">{t('totalAmount')}</p>
+                  <p className="font-semibold text-gray-900">
+                    {previewOrder.totalAmount ? `${parseFloat(previewOrder.totalAmount).toFixed(2)} zł` : '—'}
+                  </p>
+                  {previewOrder.deposit && (
+                    <p className="text-xs text-gray-500">{t('deposit')}: {parseFloat(previewOrder.deposit).toFixed(2)} zł</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Pozycje */}
+              {previewOrder.items.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase mb-2">{t('lensItems')}</p>
+                  <div className="space-y-2">
+                    {previewOrder.items.map((item, i) => (
+                      <div key={i} className="bg-gray-50 rounded-lg px-3 py-2 text-sm">
+                        <p className="font-medium text-gray-800">{typeLabel(item.type)}</p>
+                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-600">
+                          {(item.opSph || item.opCyl) && (
+                            <span>OP: {[item.opSph, item.opCyl, item.opAxis && `ax${item.opAxis}`].filter(Boolean).join(' / ')}</span>
+                          )}
+                          {(item.olSph || item.olCyl) && (
+                            <span>OL: {[item.olSph, item.olCyl, item.olAxis && `ax${item.olAxis}`].filter(Boolean).join(' / ')}</span>
+                          )}
+                          {item.frameModel && <span>{t('frame')}: {item.frameModel}{item.ownFrame ? ` (${t('ownFrame')})` : ''}</span>}
+                          {(item.framePrice || item.lensPrice) && (
+                            <span>
+                              {item.framePrice ? `${t('frame')}: ${item.framePrice} zł` : ''}
+                              {item.framePrice && item.lensPrice ? ' | ' : ''}
+                              {item.lensPrice ? `${t('lenses')}: ${item.lensPrice} zł` : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Notatki */}
+              {previewOrder.notes && (
+                <div>
+                  <p className="text-xs text-gray-500 uppercase">{t('notes')}</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{previewOrder.notes}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3 border-t bg-gray-50 flex justify-end gap-2">
+              <button
+                onClick={() => { setPreviewOrder(null); openEdit(previewOrder); }}
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                {t('edit')}
+              </button>
+              <button
+                onClick={() => setPreviewOrder(null)}
+                className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+              >
+                {t('close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl bg-white shadow-2xl flex flex-col border-l border-gray-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
+        <div className="relative w-full max-w-2xl max-h-[90vh] bg-white shadow-2xl flex flex-col rounded-xl border border-gray-200 mx-4">
           <div className="p-6 border-b flex items-center justify-between flex-shrink-0">
             <h2 className="text-lg font-semibold">
               {editingOrder ? t('editWorkOrder') : t('addWorkOrder')}
@@ -891,6 +1011,7 @@ export default function WorkOrdersPage() {
                 </button>
               </div>
             </form>
+        </div>
         </div>
       )}
     </div>

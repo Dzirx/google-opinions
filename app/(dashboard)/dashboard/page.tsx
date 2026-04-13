@@ -21,7 +21,6 @@ export default async function DashboardPage() {
   let stats = {
     totalCustomers: 0,
     visitsToday: 0,
-    smsPending: 0,
     readyOrders: 0,
   };
 
@@ -45,27 +44,13 @@ export default async function DashboardPage() {
   }[] = [];
 
   if (userBusiness) {
-    const [totalCustomers, visitsToday, reminderPending, reviewPending, readyOrdersCount] =
+    const [totalCustomers, visitsToday, readyOrdersCount] =
       await Promise.all([
         db.customer.count({ where: { businessId: userBusiness.id } }),
         db.visit.count({
           where: {
             customer: { businessId: userBusiness.id },
             visitDate: { gte: today, lt: tomorrow },
-          },
-        }),
-        db.visit.count({
-          where: {
-            customer: { businessId: userBusiness.id },
-            reminderSmsStatus: 'pending',
-            reminderSmsDate: { not: null },
-          },
-        }),
-        db.visit.count({
-          where: {
-            customer: { businessId: userBusiness.id },
-            reviewSmsStatus: 'pending',
-            reviewSmsDate: { not: null },
           },
         }),
         db.workOrder.count({
@@ -75,7 +60,6 @@ export default async function DashboardPage() {
 
     stats.totalCustomers = totalCustomers;
     stats.visitsToday = visitsToday;
-    stats.smsPending = reminderPending + reviewPending;
     stats.readyOrders = readyOrdersCount;
 
     const [recentVisitsRaw, readyOrdersRaw] = await Promise.all([
