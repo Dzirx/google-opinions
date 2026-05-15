@@ -61,6 +61,7 @@ const STATUSES = [
 
 function emptyItem(): WorkOrderItem {
   return {
+    id: `new-${Math.random().toString(36).slice(2)}`,
     type: 'do_dali',
     opSph: '', opCyl: '', opAxis: '', opAdd: '', opPd: '',
     olSph: '', olCyl: '', olAxis: '', olAdd: '', olPd: '',
@@ -71,6 +72,7 @@ function emptyItem(): WorkOrderItem {
 function emptyForm() {
   return {
     customerId: '',
+    orderNumber: '',
     receivedAt: new Date().toISOString().split('T')[0],
     pickupDate: '',
     status: 'pending',
@@ -138,6 +140,7 @@ export default function WorkOrdersPage() {
     setEditingOrder(order);
     setForm({
       customerId: order.customerId,
+      orderNumber: order.orderNumber,
       receivedAt: order.receivedAt.split('T')[0],
       pickupDate: order.pickupDate ? order.pickupDate.split('T')[0] : '',
       status: order.status,
@@ -706,6 +709,17 @@ export default function WorkOrdersPage() {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('orderNumber')}</label>
+                  <input
+                    type="text"
+                    value={form.orderNumber}
+                    onChange={e => setForm(prev => ({ ...prev, orderNumber: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    placeholder={t('orderNumberPlaceholder')}
+                  />
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {t('receivedAt')} <span className="text-red-500">*</span>
                   </label>
@@ -789,7 +803,7 @@ export default function WorkOrdersPage() {
 
                 <div className="space-y-4">
                   {form.items.map((item, idx) => (
-                    <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                    <div key={item.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <span className="text-sm font-medium text-gray-500">#{idx + 1}</span>

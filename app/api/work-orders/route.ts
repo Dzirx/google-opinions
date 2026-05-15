@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { customerId, receivedAt, pickupDate, status, totalAmount, deposit, notes, items } = body;
+    const { customerId, orderNumber: customOrderNumber, receivedAt, pickupDate, status, totalAmount, deposit, notes, items } = body;
 
     if (!customerId) {
       return NextResponse.json({ error: 'Customer ID is required' }, { status: 400 });
@@ -89,12 +89,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    // Auto-generate order number: ZL/YYYY/NNN
-    const year = new Date().getFullYear();
-    const count = await db.workOrder.count({
-      where: { businessId: userBusiness.id },
-    });
-    const orderNumber = `ZL/${year}/${String(count + 1).padStart(3, '0')}`;
+    let orderNumber: string;
+    if (customOrderNumber?.trim()) {
+      orderNumber = customOrderNumber.trim();
+    } else {
+      const year = new Date().getFullYear();
+      const count = await db.workOrder.count({ where: { businessId: userBusiness.id } });
+      orderNumber = `ZL/${year}/${String(count + 1).padStart(3, '0')}`;
+    }
 
     const workOrder = await db.workOrder.create({
       data: {
@@ -135,7 +137,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, customerId, receivedAt, pickupDate, status, totalAmount, deposit, notes, items } = body;
+    const { id, customerId, orderNumber, receivedAt, pickupDate, status, totalAmount, deposit, notes, items } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Work order ID is required' }, { status: 400 });
@@ -154,9 +156,10 @@ export async function PATCH(req: NextRequest) {
       const existingItems = await db.workOrderItem.findMany({ where: { workOrderId: id } });
       const existingIds = existingItems.map(i => i.id);
 
-      const toDelete = existingIds.filter(eid => !incomingIds.includes(eid));
-      const toUpdate = (items as any[]).filter(i => i.id);
-      const toCreate = (items as any[]).filter(i => !i.id);
+      const isDbId = (id: string) => !id.startsWith('new-');
+      const toDelete = existingIds.filter(eid => !incomingIds.filter(isDbId).includes(eid));
+      const toUpdate = (items as any[]).filter(i => i.id && isDbId(i.id));
+      const toCreate = (items as any[]).filter(i => !i.id || !isDbId(i.id));
 
       await Promise.all([
         toDelete.length > 0
@@ -175,6 +178,7 @@ export async function PATCH(req: NextRequest) {
       where: { id },
       data: {
         customerId: customerId ?? existing.customerId,
+        orderNumber: orderNumber?.trim() || existing.orderNumber,
         receivedAt: receivedAt ? new Date(receivedAt) : existing.receivedAt,
         pickupDate: pickupDate ? new Date(pickupDate) : null,
         status: status ?? existing.status,
