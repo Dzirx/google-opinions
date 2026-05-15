@@ -39,7 +39,7 @@ export default async function DashboardPage() {
     id: string;
     orderNumber: string;
     customerName: string;
-    dueAt: string | null;
+    pickupDate: string | null;
     totalAmount: string | null;
   }[] = [];
 
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
       db.workOrder.findMany({
         where: { businessId: userBusiness.id, status: 'ready' },
         include: { customer: true },
-        orderBy: { dueAt: 'asc' },
+        orderBy: { pickupDate: 'asc' },
         take: 6,
       }),
     ]);
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
       id: o.id,
       orderNumber: o.orderNumber,
       customerName: `${o.customer.name} ${o.customer.surname}`,
-      dueAt: o.dueAt?.toISOString() ?? null,
+      pickupDate: o.pickupDate?.toISOString() ?? null,
       totalAmount: o.totalAmount?.toString() ?? null,
     }));
   }

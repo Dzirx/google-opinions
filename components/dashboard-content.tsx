@@ -18,7 +18,7 @@ interface ReadyWorkOrder {
   id: string;
   orderNumber: string;
   customerName: string;
-  dueAt: string | null;
+  pickupDate: string | null;
   totalAmount: string | null;
 }
 
@@ -182,8 +182,8 @@ export function DashboardContent({ userName, stats, recentVisits, readyWorkOrder
                       <p className="text-sm font-medium text-gray-900 truncate">{order.customerName}</p>
                       <p className="text-xs text-gray-400 mt-0.5">
                         #{order.orderNumber}
-                        {order.dueAt && (
-                          <span> · {t('orderDue')}: {new Date(order.dueAt).toLocaleDateString('pl-PL')}</span>
+                        {order.pickupDate && (
+                          <span> · {t('orderDue')}: {new Date(order.pickupDate).toLocaleDateString('pl-PL')}</span>
                         )}
                       </p>
                     </div>

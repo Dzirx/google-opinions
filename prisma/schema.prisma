@@ -135,13 +135,15 @@ model WorkOrder {
   customerId  String          @map("customer_id") @db.Uuid
   orderNumber String          @map("order_number") @db.VarChar(50)
   receivedAt  DateTime        @map("received_at") @db.Timestamp(6)
-  dueAt       DateTime?       @map("due_at") @db.Timestamp(6)
+  pickupDate  DateTime?       @map("pickup_date") @db.Timestamp(6)
   status      String          @default("pending") @db.VarChar(50)
   totalAmount Decimal?        @map("total_amount") @db.Decimal(10,2)
   deposit     Decimal?        @db.Decimal(10,2)
-  notes       String?         @db.Text
-  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt   DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  notes              String?         @db.Text
+  reviewSmsStatus    String          @default("pending") @map("review_sms_status") @db.VarChar(20)
+  reviewSmsSentAt    DateTime?       @map("review_sms_sent_at") @db.Timestamp(6)
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt          DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
 
   business    Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   customer    Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)

@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { getUserBusiness } from '@/lib/api/get-user-business';
 
-async function getUserBusiness(userId: string) {
-  return db.business.findFirst({ where: { userId } });
+function mapItemData(item: any) {
+  return {
+    type: item.type,
+    opSph: item.opSph !== '' && item.opSph != null ? parseFloat(item.opSph) : null,
+    opCyl: item.opCyl !== '' && item.opCyl != null ? parseFloat(item.opCyl) : null,
+    opAxis: item.opAxis !== '' && item.opAxis != null ? parseInt(item.opAxis) : null,
+    opAdd: item.opAdd !== '' && item.opAdd != null ? parseFloat(item.opAdd) : null,
+    opPd: item.opPd !== '' && item.opPd != null ? parseFloat(item.opPd) : null,
+    olSph: item.olSph !== '' && item.olSph != null ? parseFloat(item.olSph) : null,
+    olCyl: item.olCyl !== '' && item.olCyl != null ? parseFloat(item.olCyl) : null,
+    olAxis: item.olAxis !== '' && item.olAxis != null ? parseInt(item.olAxis) : null,
+    olAdd: item.olAdd !== '' && item.olAdd != null ? parseFloat(item.olAdd) : null,
+    olPd: item.olPd !== '' && item.olPd != null ? parseFloat(item.olPd) : null,
+    frameModel: item.frameModel || null,
+    ownFrame: item.ownFrame || false,
+    lensType: item.lensType || null,
+    framePrice: item.framePrice !== '' && item.framePrice != null ? parseFloat(item.framePrice) : null,
+    lensPrice: item.lensPrice !== '' && item.lensPrice != null ? parseFloat(item.lensPrice) : null,
+  };
 }
 
 // GET - List all work orders for business
@@ -55,7 +73,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { customerId, receivedAt, dueAt, status, totalAmount, deposit, notes, items } = body;
+    const { customerId, receivedAt, pickupDate, status, totalAmount, deposit, notes, items } = body;
 
     if (!customerId) {
       return NextResponse.json({ error: 'Customer ID is required' }, { status: 400 });
@@ -84,30 +102,13 @@ export async function POST(req: NextRequest) {
         customerId,
         orderNumber,
         receivedAt: new Date(receivedAt),
-        dueAt: dueAt ? new Date(dueAt) : null,
+        pickupDate: pickupDate ? new Date(pickupDate) : null,
         status: status || 'pending',
         totalAmount: totalAmount ? parseFloat(totalAmount) : null,
         deposit: deposit ? parseFloat(deposit) : null,
         notes: notes || null,
         items: {
-          create: (items || []).map((item: any) => ({
-            type: item.type,
-            opSph: item.opSph !== '' && item.opSph != null ? parseFloat(item.opSph) : null,
-            opCyl: item.opCyl !== '' && item.opCyl != null ? parseFloat(item.opCyl) : null,
-            opAxis: item.opAxis !== '' && item.opAxis != null ? parseInt(item.opAxis) : null,
-            opAdd: item.opAdd !== '' && item.opAdd != null ? parseFloat(item.opAdd) : null,
-            opPd: item.opPd !== '' && item.opPd != null ? parseFloat(item.opPd) : null,
-            olSph: item.olSph !== '' && item.olSph != null ? parseFloat(item.olSph) : null,
-            olCyl: item.olCyl !== '' && item.olCyl != null ? parseFloat(item.olCyl) : null,
-            olAxis: item.olAxis !== '' && item.olAxis != null ? parseInt(item.olAxis) : null,
-            olAdd: item.olAdd !== '' && item.olAdd != null ? parseFloat(item.olAdd) : null,
-            olPd: item.olPd !== '' && item.olPd != null ? parseFloat(item.olPd) : null,
-            frameModel: item.frameModel || null,
-            ownFrame: item.ownFrame || false,
-            lensType: item.lensType || null,
-            framePrice: item.framePrice !== '' && item.framePrice != null ? parseFloat(item.framePrice) : null,
-            lensPrice: item.lensPrice !== '' && item.lensPrice != null ? parseFloat(item.lensPrice) : null,
-          })),
+          create: (items || []).map(mapItemData),
         },
       },
       include: { items: true, customer: true },
@@ -134,7 +135,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, customerId, receivedAt, dueAt, status, totalAmount, deposit, notes, items } = body;
+    const { id, customerId, receivedAt, pickupDate, status, totalAmount, deposit, notes, items } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Work order ID is required' }, { status: 400 });
@@ -147,41 +148,41 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Work order not found' }, { status: 404 });
     }
 
-    // Replace items: delete all, recreate
-    await db.workOrderItem.deleteMany({ where: { workOrderId: id } });
+    // Diff items only when explicitly provided in the request
+    if (items !== undefined) {
+      const incomingIds = (items as any[]).filter(i => i.id).map((i: any) => i.id as string);
+      const existingItems = await db.workOrderItem.findMany({ where: { workOrderId: id } });
+      const existingIds = existingItems.map(i => i.id);
+
+      const toDelete = existingIds.filter(eid => !incomingIds.includes(eid));
+      const toUpdate = (items as any[]).filter(i => i.id);
+      const toCreate = (items as any[]).filter(i => !i.id);
+
+      await Promise.all([
+        toDelete.length > 0
+          ? db.workOrderItem.deleteMany({ where: { id: { in: toDelete } } })
+          : Promise.resolve(),
+        ...toUpdate.map((item: any) =>
+          db.workOrderItem.update({ where: { id: item.id }, data: mapItemData(item) })
+        ),
+        ...toCreate.map((item: any) =>
+          db.workOrderItem.create({ data: { workOrderId: id, ...mapItemData(item) } })
+        ),
+      ]);
+    }
 
     const workOrder = await db.workOrder.update({
       where: { id },
       data: {
         customerId: customerId ?? existing.customerId,
         receivedAt: receivedAt ? new Date(receivedAt) : existing.receivedAt,
-        dueAt: dueAt ? new Date(dueAt) : null,
+        pickupDate: pickupDate ? new Date(pickupDate) : null,
         status: status ?? existing.status,
         totalAmount: totalAmount !== undefined ? (totalAmount !== '' ? parseFloat(totalAmount) : null) : existing.totalAmount,
         deposit: deposit !== undefined ? (deposit !== '' ? parseFloat(deposit) : null) : existing.deposit,
         notes: notes !== undefined ? notes || null : existing.notes,
-        items: {
-          create: (items || []).map((item: any) => ({
-            type: item.type,
-            opSph: item.opSph !== '' && item.opSph != null ? parseFloat(item.opSph) : null,
-            opCyl: item.opCyl !== '' && item.opCyl != null ? parseFloat(item.opCyl) : null,
-            opAxis: item.opAxis !== '' && item.opAxis != null ? parseInt(item.opAxis) : null,
-            opAdd: item.opAdd !== '' && item.opAdd != null ? parseFloat(item.opAdd) : null,
-            opPd: item.opPd !== '' && item.opPd != null ? parseFloat(item.opPd) : null,
-            olSph: item.olSph !== '' && item.olSph != null ? parseFloat(item.olSph) : null,
-            olCyl: item.olCyl !== '' && item.olCyl != null ? parseFloat(item.olCyl) : null,
-            olAxis: item.olAxis !== '' && item.olAxis != null ? parseInt(item.olAxis) : null,
-            olAdd: item.olAdd !== '' && item.olAdd != null ? parseFloat(item.olAdd) : null,
-            olPd: item.olPd !== '' && item.olPd != null ? parseFloat(item.olPd) : null,
-            frameModel: item.frameModel || null,
-            ownFrame: item.ownFrame || false,
-            lensType: item.lensType || null,
-            framePrice: item.framePrice !== '' && item.framePrice != null ? parseFloat(item.framePrice) : null,
-            lensPrice: item.lensPrice !== '' && item.lensPrice != null ? parseFloat(item.lensPrice) : null,
-          })),
-        },
       },
-      include: { items: true, customer: true },
+      include: { items: { orderBy: { id: 'asc' } }, customer: true },
     });
 
     return NextResponse.json({ workOrder });

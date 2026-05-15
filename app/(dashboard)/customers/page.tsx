@@ -15,6 +15,15 @@ interface Customer {
   visits?: any[];
 }
 
+
+function formatPhoneDisplay(value: string): string {
+  const clean = value.replace(/\s/g, '');
+  const prefix = clean.startsWith('+') ? '+' : '';
+  const digits = clean.replace(/^\+/, '');
+  const parts = digits.replace(/(\d{3})(?=\d)/g, '$1 ');
+  return prefix + parts;
+}
+
 export default function CustomersPage() {
   const { t } = useLanguage();
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -66,7 +75,7 @@ export default function CustomersPage() {
       const response = await fetch('/api/customers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, phone: formData.phone.trim().replace(/\s/g, '') }),
       });
 
       const data = await response.json();
@@ -99,6 +108,7 @@ export default function CustomersPage() {
         body: JSON.stringify({
           id: editingCustomer.id,
           ...formData,
+          phone: formData.phone.trim().replace(/\s/g, ''),
         }),
       });
 
@@ -143,7 +153,7 @@ export default function CustomersPage() {
     setFormData({
       name: customer.name,
       surname: customer.surname,
-      phone: customer.phone,
+      phone: formatPhoneDisplay(customer.phone),
       email: customer.email || '',
       smsConsent: customer.smsConsent,
     });
@@ -272,7 +282,7 @@ export default function CustomersPage() {
                     {customer.name} {customer.surname}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {customer.phone}
+                    {formatPhoneDisplay(customer.phone)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {customer.email || '-'}
@@ -350,8 +360,8 @@ export default function CustomersPage() {
                   <input
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+48123456789"
+                    onChange={(e) => setFormData({ ...formData, phone: formatPhoneDisplay(e.target.value) })}
+                    placeholder=""
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white placeholder-gray-400"
                     style={{ color: '#000000' }}
                     required

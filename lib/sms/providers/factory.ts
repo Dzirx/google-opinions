@@ -17,28 +17,4 @@ export class SmsProviderFactory {
     }
   }
 
-  static getAvailableProviders() {
-    return [
-      {
-        id: 'smsapi',
-        name: 'SMSAPI.pl',
-        description: 'Poland & Europe',
-        website: 'https://www.smsapi.pl',
-        requiredFields: [
-          { name: 'apiKey', label: 'API Token', type: 'password' },
-          { name: 'sender', label: 'Sender Name', type: 'text', maxLength: 11 },
-        ],
-      },
-      {
-        id: 'smsplanet',
-        name: 'SMSPlanet',
-        description: 'Polska',
-        website: 'https://smsplanet.pl',
-        requiredFields: [
-          { name: 'apiKey', label: 'Token API', type: 'password' },
-          { name: 'sender', label: 'Nazwa nadawcy', type: 'text', maxLength: 11 },
-        ],
-      },
-    ];
-  }
 }

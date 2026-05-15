@@ -49,22 +49,5 @@ export class SmsPlanetProvider implements ISmsProvider {
     }
   }
 
-  validateConfig(): boolean {
-    return !!this.apiKey && !!this.sender;
-  }
 
-  getName(): string {
-    return 'SMSPlanet';
-  }
-
-  async testConnection(): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.baseUrl}/balance`, {
-        headers: { 'Authorization': `Bearer ${this.apiKey}` },
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
-  }
 }

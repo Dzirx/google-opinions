@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { getUserBusiness } from '@/lib/api/get-user-business';
 
 // GET - List all customers for business
 export async function GET() {
@@ -11,9 +12,7 @@ export async function GET() {
     }
 
     // Get user's business
-    const userBusiness = await db.business.findUnique({
-      where: { userId: session.user.id },
-    });
+    const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
       return NextResponse.json({ error: 'Business not found. Please create a business first.' }, { status: 404 });
@@ -43,9 +42,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.business.findUnique({
-      where: { userId: session.user.id },
-    });
+    const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
@@ -120,9 +117,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.business.findUnique({
-      where: { userId: session.user.id },
-    });
+    const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
@@ -209,9 +204,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.business.findUnique({
-      where: { userId: session.user.id },
-    });
+    const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });

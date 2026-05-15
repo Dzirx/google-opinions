@@ -3,6 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/lib/i18n/language-context';
 
+function formatPhone(value: string): string {
+  const clean = value.replace(/\s/g, '');
+  const prefix = clean.startsWith('+') ? '+' : '';
+  const digits = clean.replace(/^\+/, '');
+  return prefix + digits.replace(/(\d{3})(?=\d)/g, '$1 ');
+}
+
 interface WorkOrderItem {
   id?: string;
   type: string;
@@ -22,11 +29,13 @@ interface WorkOrder {
   customerPhone: string;
   orderNumber: string;
   receivedAt: string;
-  dueAt: string | null;
+  pickupDate: string | null;
   status: string;
   totalAmount: string | null;
   deposit: string | null;
   notes: string | null;
+  reviewSmsStatus: string | null;
+  reviewSmsSentAt: string | null;
   items: WorkOrderItem[];
 }
 
@@ -63,7 +72,7 @@ function emptyForm() {
   return {
     customerId: '',
     receivedAt: new Date().toISOString().split('T')[0],
-    dueAt: '',
+    pickupDate: '',
     status: 'pending',
     totalAmount: '',
     deposit: '',
@@ -130,7 +139,7 @@ export default function WorkOrdersPage() {
     setForm({
       customerId: order.customerId,
       receivedAt: order.receivedAt.split('T')[0],
-      dueAt: order.dueAt ? order.dueAt.split('T')[0] : '',
+      pickupDate: order.pickupDate ? order.pickupDate.split('T')[0] : '',
       status: order.status,
       totalAmount: order.totalAmount ?? '',
       deposit: order.deposit ?? '',
@@ -228,7 +237,7 @@ export default function WorkOrdersPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to send SMS');
-      alert(t('reviewSmsSent'));
+      await fetchWorkOrders();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send SMS');
     } finally {
@@ -349,7 +358,7 @@ export default function WorkOrdersPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('orderNumber')}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('customer')}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('receivedAt')}</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('dueAt')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('pickupDate')}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('orderStatus')}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('totalAmount')}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('actions')}</th>
@@ -368,13 +377,13 @@ export default function WorkOrdersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">{order.customerName}</div>
-                    <div className="text-sm text-gray-500">{order.customerPhone}</div>
+                    <div className="text-sm text-gray-500">{formatPhone(order.customerPhone)}</div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
                     {new Date(order.receivedAt).toLocaleDateString('pl-PL')}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
-                    {order.dueAt ? new Date(order.dueAt).toLocaleDateString('pl-PL') : '—'}
+                    {order.pickupDate ? new Date(order.pickupDate).toLocaleDateString('pl-PL') : '—'}
                   </td>
                   <td className="px-4 py-3">
                     <select
@@ -404,13 +413,30 @@ export default function WorkOrdersPage() {
                       >
                         {t('delete')}
                       </button>
-                      <button
-                        onClick={() => handleSendReviewSms(order.id)}
-                        disabled={sendingSmsId === order.id}
-                        className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                      >
-                        {sendingSmsId === order.id ? t('sending') : t('sendReviewSms')}
-                      </button>
+                      {order.reviewSmsStatus === 'sent' ? (
+                        <span className="px-3 py-1 text-xs text-green-700 bg-green-100 rounded">
+                          {t('reviewSmsSent')}
+                        </span>
+                      ) : order.reviewSmsStatus === 'failed' ? (
+                        <>
+                          <span className="px-3 py-1 text-xs text-red-700 bg-red-100 rounded">{t('reviewSmsFailed')}</span>
+                          <button
+                            onClick={() => handleSendReviewSms(order.id)}
+                            disabled={sendingSmsId === order.id}
+                            className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                          >
+                            {sendingSmsId === order.id ? t('sending') : t('sendReviewSms')}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => handleSendReviewSms(order.id)}
+                          disabled={sendingSmsId === order.id}
+                          className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                        >
+                          {sendingSmsId === order.id ? t('sending') : t('sendReviewSms')}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -442,7 +468,7 @@ export default function WorkOrdersPage() {
                 <div className="flex-1">
                   <p className="text-xs text-gray-500 uppercase">{t('customer')}</p>
                   <p className="font-medium text-gray-900">{previewOrder.customerName}</p>
-                  <p className="text-sm text-gray-500">{previewOrder.customerPhone}</p>
+                  <p className="text-sm text-gray-500">{formatPhone(previewOrder.customerPhone)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 uppercase">{t('orderStatus')}</p>
@@ -459,8 +485,8 @@ export default function WorkOrdersPage() {
                   <p className="text-gray-900">{new Date(previewOrder.receivedAt).toLocaleDateString('pl-PL')}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 uppercase">{t('dueAt')}</p>
-                  <p className="text-gray-900">{previewOrder.dueAt ? new Date(previewOrder.dueAt).toLocaleDateString('pl-PL') : '—'}</p>
+                  <p className="text-xs text-gray-500 uppercase">{t('pickupDate')}</p>
+                  <p className="text-gray-900">{previewOrder.pickupDate ? new Date(previewOrder.pickupDate).toLocaleDateString('pl-PL') : '—'}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 uppercase">{t('totalAmount')}</p>
@@ -584,7 +610,7 @@ export default function WorkOrdersPage() {
                                   className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
                                 >
                                   <div className="font-medium text-gray-900">{c.name} {c.surname}</div>
-                                  <div className="text-sm text-gray-500">{c.phone}</div>
+                                  <div className="text-sm text-gray-500">{formatPhone(c.phone)}</div>
                                 </button>
                               ))}
                           </div>
@@ -653,7 +679,7 @@ export default function WorkOrdersPage() {
                           value={newCustomer.phone}
                           onChange={e => setNewCustomer(p => ({ ...p, phone: e.target.value }))}
                           className="mt-1 w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm text-gray-900"
-                          placeholder="+48 123 456 789"
+                          placeholder=""
                         />
                       </div>
                       <div>
@@ -693,11 +719,11 @@ export default function WorkOrdersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('dueAt')}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('pickupDate')}</label>
                   <input
                     type="date"
-                    value={form.dueAt}
-                    onChange={e => setForm(prev => ({ ...prev, dueAt: e.target.value }))}
+                    value={form.pickupDate}
+                    onChange={e => setForm(prev => ({ ...prev, pickupDate: e.target.value }))}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2"
                   />
                 </div>

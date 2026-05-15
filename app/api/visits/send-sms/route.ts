@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { SmsProviderFactory } from '@/lib/sms/providers/factory';
+import { getUserBusiness } from '@/lib/api/get-user-business';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,9 +11,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.business.findFirst({
-      where: { userId: session.user.id },
-    });
+    const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });

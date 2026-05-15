@@ -4,6 +4,13 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n/language-context';
 
+function formatPhone(value: string): string {
+  const clean = value.replace(/\s/g, '');
+  const prefix = clean.startsWith('+') ? '+' : '';
+  const digits = clean.replace(/^\+/, '');
+  return prefix + digits.replace(/(\d{3})(?=\d)/g, '$1 ');
+}
+
 interface Visit {
   id: string;
   customerId: string;
@@ -530,7 +537,7 @@ export default function VisitsPage() {
                 <tr key={visit.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{visit.customerName}</div>
-                    <div className="text-sm text-gray-500">{visit.customerPhone}</div>
+                    <div className="text-sm text-gray-500">{formatPhone(visit.customerPhone)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(visit.visitDate).toLocaleString()}
@@ -543,7 +550,14 @@ export default function VisitsPage() {
                       <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
                         {t('reminderSmsSent')}
                       </span>
-                    ) : !visit.smsConsent ? (
+                    ) : visit.reminderSmsStatus === 'failed' ? (
+                      <div className="flex flex-wrap gap-1">
+                        <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">{t('reminderSmsFailed')}</span>
+                        <button onClick={() => handleSendSms(visit.id, 'reminder')} className="px-3 py-1 text-xs bg-yellow-500 text-white rounded-md hover:bg-yellow-600">
+                          {t('sendReminderSms')}
+                        </button>
+                      </div>
+                    ) :!visit.smsConsent ? (
                       <span className="text-gray-400 text-xs">{t('reviewSmsNoConsent')}</span>
                     ) : (
                       <button
@@ -559,7 +573,14 @@ export default function VisitsPage() {
                       <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
                         {t('reviewSmsSent')}
                       </span>
-                    ) : !visit.smsConsent ? (
+                    ) : visit.reviewSmsStatus === 'failed' ? (
+                      <div className="flex flex-wrap gap-1">
+                        <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">{t('reviewSmsFailed')}</span>
+                        <button onClick={() => handleSendSms(visit.id, 'review')} className="px-3 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                          {t('sendReviewSms')}
+                        </button>
+                      </div>
+                    ) :!visit.smsConsent ? (
                       <span className="text-gray-400 text-xs">{t('reviewSmsNoConsent')}</span>
                     ) : (
                       <button
@@ -635,7 +656,7 @@ export default function VisitsPage() {
                                 className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
                               >
                                 <div className="font-medium text-gray-900">{c.name} {c.surname}</div>
-                                <div className="text-sm text-gray-600">{c.phone}</div>
+                                <div className="text-sm text-gray-600">{formatPhone(c.phone)}</div>
                               </button>
                             ))}
                           </div>
@@ -712,7 +733,7 @@ export default function VisitsPage() {
                             onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
                             className="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 bg-white text-sm"
                             style={{ color: '#000000' }}
-                            placeholder="+48 123 456 789"
+                            placeholder=""
                           />
                         </div>
                         <div>

@@ -2,28 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { SmsProviderFactory } from '@/lib/sms/providers/factory';
+import { getUserBusiness } from '@/lib/api/get-user-business';
 
 export async function POST(req: NextRequest) {
+  let workOrderId: string | undefined;
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userBusiness = await db.business.findFirst({
-      where: { userId: session.user.id },
-    });
+    const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }
 
     const body = await req.json();
-    const { workOrderId } = body;
+    workOrderId = body.workOrderId;
 
     if (!workOrderId) {
       return NextResponse.json({ error: 'Work order ID is required' }, { status: 400 });
     }
+
 
     const workOrder = await db.workOrder.findFirst({
       where: { id: workOrderId, businessId: userBusiness.id },
@@ -64,15 +65,24 @@ export async function POST(req: NextRequest) {
     const smsResult = await smsProvider.sendSms(workOrder.customer.phone, message);
 
     if (!smsResult.success) {
-      throw new Error(smsResult.error || 'SMS provider returned failure');
+      await db.workOrder.update({
+        where: { id: workOrderId },
+        data: { reviewSmsStatus: 'failed' },
+      });
+      return NextResponse.json({ error: smsResult.error || 'SMS provider returned failure' }, { status: 500 });
     }
 
-    return NextResponse.json({
-      message: 'Review SMS sent successfully',
-      smsResult,
+    await db.workOrder.update({
+      where: { id: workOrderId },
+      data: { reviewSmsStatus: 'sent', reviewSmsSentAt: new Date() },
     });
+
+    return NextResponse.json({ message: 'Review SMS sent successfully', smsResult });
   } catch (error) {
     console.error('Error sending SMS:', error);
+    if (workOrderId) {
+      await db.workOrder.update({ where: { id: workOrderId }, data: { reviewSmsStatus: 'failed' } }).catch(() => {});
+    }
     return NextResponse.json({
       error: 'Failed to send SMS',
       details: error instanceof Error ? error.message : 'Unknown error',

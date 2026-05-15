@@ -55,25 +55,5 @@ export class SmsApiProvider implements ISmsProvider {
     }
   }
 
-  validateConfig(): boolean {
-    return !!this.apiKey && !!this.sender;
-  }
 
-  getName(): string {
-    return 'SMSAPI.pl';
-  }
-
-  async testConnection(): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.baseUrl}/user.do`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
-  }
 }
