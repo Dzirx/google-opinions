@@ -27,12 +27,12 @@ export default function RegisterPage() {
     setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('Hasła nie są identyczne');
       return;
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError('Hasło musi mieć co najmniej 8 znaków');
       return;
     }
 
@@ -54,13 +54,13 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Something went wrong');
+        setError(data.error || 'Coś poszło nie tak');
         return;
       }
 
       router.push('/login?registered=true');
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError('Coś poszło nie tak. Spróbuj ponownie.');
     } finally {
       setLoading(false);
     }
@@ -85,22 +85,22 @@ export default function RegisterPage() {
 
             <div className="hidden md:flex items-center space-x-6">
               <Link href="/#features" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition">
-                Features
+                Funkcje
               </Link>
               <Link href="/#testimonials" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition">
-                Testimonials
+                Opinie
               </Link>
 
               <div className="w-px h-6 bg-gray-300"></div>
 
               <Link href="/login" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition">
-                Login
+                Logowanie
               </Link>
               <Link
                 href="/register"
                 className="bg-gray-900 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition"
               >
-                Sign Up
+                Rejestracja
               </Link>
             </div>
           </div>
@@ -113,17 +113,17 @@ export default function RegisterPage() {
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900">
-                Create Account
+                Rejestracja
               </h2>
               <p className="mt-3 text-gray-600">
-                Sign up to start collecting reviews
+                Utwórz konto i zacznij zarządzać swoim optykiem
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
+                  Imię i nazwisko
                 </label>
                 <input
                   id="name"
@@ -133,13 +133,13 @@ export default function RegisterPage() {
                   value={formData.name}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                  placeholder="John Doe"
+                  placeholder="Jan Kowalski"
                 />
               </div>
 
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
+                  Adres e-mail
                 </label>
                 <input
                   id="email"
@@ -156,7 +156,7 @@ export default function RegisterPage() {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
+                  Hasło
                 </label>
                 <input
                   id="password"
@@ -167,13 +167,13 @@ export default function RegisterPage() {
                   value={formData.password}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                  placeholder="Min. 8 characters"
+                  placeholder="Min. 8 znaków"
                 />
               </div>
 
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
+                  Powtórz hasło
                 </label>
                 <input
                   id="confirmPassword"
@@ -184,7 +184,7 @@ export default function RegisterPage() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                  placeholder="Repeat password"
+                  placeholder="Powtórz hasło"
                 />
               </div>
 
@@ -199,14 +199,14 @@ export default function RegisterPage() {
                 disabled={loading}
                 className="w-full bg-gray-900 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
-                {loading ? 'Creating account...' : 'Create Account'}
+                {loading ? 'Tworzenie konta...' : 'Zarejestruj się'}
               </button>
 
               <div className="text-center">
                 <p className="text-sm text-gray-600">
-                  Already have an account?{' '}
+                  Masz już konto?{' '}
                   <Link href="/login" className="font-medium text-purple-600 hover:text-purple-500 underline">
-                    Sign in
+                    Zaloguj się
                   </Link>
                 </p>
               </div>

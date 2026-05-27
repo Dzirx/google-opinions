@@ -29,12 +29,12 @@ export async function GET() {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const userBusiness = await getUserBusiness(session.user.id);
     if (!userBusiness) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     const workOrders = await db.workOrder.findMany({
@@ -55,7 +55,7 @@ export async function GET() {
     return NextResponse.json({ workOrders: result });
   } catch (error) {
     console.error('Error fetching work orders:', error);
-    return NextResponse.json({ error: 'Failed to fetch work orders' }, { status: 500 });
+    return NextResponse.json({ error: 'Nie udało się pobrać zleceń' }, { status: 500 });
   }
 }
 
@@ -64,29 +64,29 @@ export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const userBusiness = await getUserBusiness(session.user.id);
     if (!userBusiness) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     const body = await req.json();
     const { customerId, orderNumber: customOrderNumber, receivedAt, pickupDate, status, totalAmount, deposit, notes, items } = body;
 
     if (!customerId) {
-      return NextResponse.json({ error: 'Customer ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Wymagane ID klienta' }, { status: 400 });
     }
     if (!receivedAt) {
-      return NextResponse.json({ error: 'Received date is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Data przyjęcia jest wymagana' }, { status: 400 });
     }
 
     const customer = await db.customer.findFirst({
       where: { id: customerId, businessId: userBusiness.id },
     });
     if (!customer) {
-      return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono klienta' }, { status: 404 });
     }
 
     let orderNumber: string;
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ workOrder }, { status: 201 });
   } catch (error) {
     console.error('Error creating work order:', error);
-    return NextResponse.json({ error: 'Failed to create work order' }, { status: 500 });
+    return NextResponse.json({ error: 'Nie udało się utworzyć zlecenia' }, { status: 500 });
   }
 }
 
@@ -128,26 +128,26 @@ export async function PATCH(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const userBusiness = await getUserBusiness(session.user.id);
     if (!userBusiness) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     const body = await req.json();
     const { id, customerId, orderNumber, receivedAt, pickupDate, status, totalAmount, deposit, notes, items } = body;
 
     if (!id) {
-      return NextResponse.json({ error: 'Work order ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Wymagane ID zlecenia' }, { status: 400 });
     }
 
     const existing = await db.workOrder.findFirst({
       where: { id, businessId: userBusiness.id },
     });
     if (!existing) {
-      return NextResponse.json({ error: 'Work order not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono zlecenia' }, { status: 404 });
     }
 
     // Diff items only when explicitly provided in the request
@@ -192,7 +192,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ workOrder });
   } catch (error) {
     console.error('Error updating work order:', error);
-    return NextResponse.json({ error: 'Failed to update work order' }, { status: 500 });
+    return NextResponse.json({ error: 'Nie udało się zaktualizować zlecenia' }, { status: 500 });
   }
 }
 
@@ -201,26 +201,26 @@ export async function DELETE(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const userBusiness = await getUserBusiness(session.user.id);
     if (!userBusiness) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'Work order ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Wymagane ID zlecenia' }, { status: 400 });
     }
 
     const existing = await db.workOrder.findFirst({
       where: { id, businessId: userBusiness.id },
     });
     if (!existing) {
-      return NextResponse.json({ error: 'Work order not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono zlecenia' }, { status: 404 });
     }
 
     await db.workOrder.delete({ where: { id } });
@@ -228,6 +228,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ message: 'Work order deleted successfully' });
   } catch (error) {
     console.error('Error deleting work order:', error);
-    return NextResponse.json({ error: 'Failed to delete work order' }, { status: 500 });
+    return NextResponse.json({ error: 'Nie udało się usunąć zlecenia' }, { status: 500 });
   }
 }

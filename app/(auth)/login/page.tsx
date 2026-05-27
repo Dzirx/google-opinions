@@ -25,13 +25,13 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        setError('Nieprawidłowy adres e-mail lub hasło');
       } else {
         router.push('/dashboard');
         router.refresh();
       }
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError('Coś poszło nie tak. Spróbuj ponownie.');
     } finally {
       setLoading(false);
     }
@@ -56,22 +56,22 @@ export default function LoginPage() {
 
             <div className="hidden md:flex items-center space-x-6">
               <Link href="/#features" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition">
-                Features
+                Funkcje
               </Link>
               <Link href="/#testimonials" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition">
-                Testimonials
+                Opinie
               </Link>
 
               <div className="w-px h-6 bg-gray-300"></div>
 
               <Link href="/login" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition">
-                Login
+                Logowanie
               </Link>
               <Link
                 href="/register"
                 className="bg-gray-900 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition"
               >
-                Sign Up
+                Rejestracja
               </Link>
             </div>
           </div>
@@ -84,17 +84,17 @@ export default function LoginPage() {
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900">
-                Sign In
+                Logowanie
               </h2>
               <p className="mt-3 text-gray-600">
-                Welcome back! Please sign in below
+                Witaj ponownie! Zaloguj się poniżej
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
+                  Adres e-mail
                 </label>
                 <input
                   id="email"
@@ -112,10 +112,10 @@ export default function LoginPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                    Password
+                    Hasło
                   </label>
                   <Link href="/forgot-password" className="text-sm text-purple-600 hover:text-purple-500">
-                    Forgot password?
+                    Nie pamiętasz hasła?
                   </Link>
                 </div>
                 <input
@@ -142,14 +142,14 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full bg-gray-900 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? 'Logowanie...' : 'Zaloguj się'}
               </button>
 
               <div className="text-center">
                 <p className="text-sm text-gray-600">
-                  Don't have an account?{' '}
+                  Nie masz konta?{' '}
                   <Link href="/register" className="font-medium text-purple-600 hover:text-purple-500 underline">
-                    Sign up
+                    Zarejestruj się
                   </Link>
                 </p>
               </div>

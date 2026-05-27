@@ -9,20 +9,20 @@ export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     const body = await req.json();
     workOrderId = body.workOrderId;
 
     if (!workOrderId) {
-      return NextResponse.json({ error: 'Work order ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Wymagane ID zlecenia' }, { status: 400 });
     }
 
 
@@ -32,20 +32,20 @@ export async function POST(req: NextRequest) {
     });
 
     if (!workOrder) {
-      return NextResponse.json({ error: 'Work order not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono zlecenia' }, { status: 404 });
     }
 
     if (!workOrder.customer.smsConsent) {
-      return NextResponse.json({ error: 'Customer has not consented to receive SMS' }, { status: 400 });
+      return NextResponse.json({ error: 'Klient nie wyraził zgody na otrzymywanie SMS' }, { status: 400 });
     }
 
     if (!userBusiness.smsConfig || !userBusiness.smsProvider) {
-      return NextResponse.json({ error: 'SMS provider not configured' }, { status: 400 });
+      return NextResponse.json({ error: 'Dostawca SMS nie jest skonfigurowany' }, { status: 400 });
     }
 
     const template = userBusiness.reviewSmsTemplate;
     if (!template) {
-      return NextResponse.json({ error: 'Review SMS template not configured' }, { status: 400 });
+      return NextResponse.json({ error: 'Szablon SMS z prośbą o opinię nie jest skonfigurowany' }, { status: 400 });
     }
 
     const customerFullName = `${workOrder.customer.name} ${workOrder.customer.surname}`;
@@ -84,8 +84,8 @@ export async function POST(req: NextRequest) {
       await db.workOrder.update({ where: { id: workOrderId }, data: { reviewSmsStatus: 'failed' } }).catch(() => {});
     }
     return NextResponse.json({
-      error: 'Failed to send SMS',
-      details: error instanceof Error ? error.message : 'Unknown error',
+      error: 'Nie udało się wysłać SMS',
+      details: error instanceof Error ? error.message : 'Nieznany błąd',
     }, { status: 500 });
   }
 }

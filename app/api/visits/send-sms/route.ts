@@ -8,24 +8,24 @@ export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     const body = await req.json();
     const { visitId, smsType } = body;
 
     if (!visitId || !smsType) {
-      return NextResponse.json({ error: 'Visit ID and SMS type are required' }, { status: 400 });
+      return NextResponse.json({ error: 'Wymagane ID wizyty i typ SMS' }, { status: 400 });
     }
 
     if (smsType !== 'reminder' && smsType !== 'review') {
-      return NextResponse.json({ error: 'SMS type must be "reminder" or "review"' }, { status: 400 });
+      return NextResponse.json({ error: 'Typ SMS musi być "reminder" lub "review"' }, { status: 400 });
     }
 
     // Get visit with customer
@@ -37,26 +37,26 @@ export async function POST(req: NextRequest) {
     });
 
     if (!visit || visit.customer.businessId !== userBusiness.id) {
-      return NextResponse.json({ error: 'Visit not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono wizyty' }, { status: 404 });
     }
 
     // Check SMS consent
     if (!visit.customer.smsConsent) {
-      return NextResponse.json({ error: 'Customer has not consented to receive SMS' }, { status: 400 });
+      return NextResponse.json({ error: 'Klient nie wyraził zgody na otrzymywanie SMS' }, { status: 400 });
     }
 
     // Check if already sent
     if (smsType === 'reminder' && visit.reminderSmsStatus === 'sent') {
-      return NextResponse.json({ error: 'Reminder SMS already sent' }, { status: 400 });
+      return NextResponse.json({ error: 'SMS z przypomnieniem już wysłany' }, { status: 400 });
     }
 
     if (smsType === 'review' && visit.reviewSmsStatus === 'sent') {
-      return NextResponse.json({ error: 'Review SMS already sent' }, { status: 400 });
+      return NextResponse.json({ error: 'SMS z prośbą o opinię już wysłany' }, { status: 400 });
     }
 
     // Verify SMS provider config
     if (!userBusiness.smsConfig || !userBusiness.smsProvider) {
-      return NextResponse.json({ error: 'SMS provider not configured' }, { status: 400 });
+      return NextResponse.json({ error: 'Dostawca SMS nie jest skonfigurowany' }, { status: 400 });
     }
 
     // Select template based on SMS type
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
           phone: visit.customer.phone,
           message,
           status: 'failed',
-          errorMessage: smsError instanceof Error ? smsError.message : 'Unknown error',
+          errorMessage: smsError instanceof Error ? smsError.message : 'Nieznany błąd',
         },
       });
 
@@ -124,8 +124,8 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json({
-        error: 'Failed to send SMS',
-        details: smsError instanceof Error ? smsError.message : 'Unknown error'
+        error: 'Nie udało się wysłać SMS',
+        details: smsError instanceof Error ? smsError.message : 'Nieznany błąd'
       }, { status: 500 });
     }
 
@@ -168,6 +168,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error sending SMS:', error);
-    return NextResponse.json({ error: 'Failed to send SMS' }, { status: 500 });
+    return NextResponse.json({ error: 'Nie udało się wysłać SMS' }, { status: 500 });
   }
 }

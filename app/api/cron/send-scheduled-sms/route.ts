@@ -16,12 +16,12 @@ export async function GET(req: NextRequest) {
 
     if (!cronSecret) {
       console.error('CRON_SECRET not configured');
-      return NextResponse.json({ error: 'Cron service not configured' }, { status: 500 });
+      return NextResponse.json({ error: 'Usługa cron nie jest skonfigurowana' }, { status: 500 });
     }
 
     if (authHeader !== `Bearer ${cronSecret}`) {
       console.warn('Unauthorized cron attempt');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const now = new Date();
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('[CRON] Fatal error:', error);
     return NextResponse.json(
-      { error: 'Failed to process scheduled SMS', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Nie udało się przetworzyć zaplanowanego SMS', details: error instanceof Error ? error.message : 'Nieznany błąd' },
       { status: 500 }
     );
   }
@@ -227,7 +227,7 @@ async function processSms(visit: any, smsType: 'reminder' | 'review', results: a
           phone: customer.phone,
           message,
           status: 'failed',
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          errorMessage: error instanceof Error ? error.message : 'Nieznany błąd',
         },
       });
 

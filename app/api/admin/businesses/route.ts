@@ -8,12 +8,12 @@ export async function GET() {
     const session = await auth();
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     // Check if user is admin
     if (session.user.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+      return NextResponse.json({ error: 'Brak dostępu — wymagane uprawnienia administratora' }, { status: 403 });
     }
 
     // Fetch all businesses with user info and customer counts
@@ -54,6 +54,6 @@ export async function GET() {
     return NextResponse.json({ businesses: transformedBusinesses });
   } catch (error) {
     console.error('Error fetching businesses (admin):', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Wystąpił błąd serwera' }, { status: 500 });
   }
 }

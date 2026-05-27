@@ -8,28 +8,28 @@ export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     if (!userBusiness.smsConfig || !userBusiness.smsProvider) {
-      return NextResponse.json({ error: 'SMS provider not configured' }, { status: 400 });
+      return NextResponse.json({ error: 'Dostawca SMS nie jest skonfigurowany' }, { status: 400 });
     }
 
     const body = await req.json();
     const { message, customerIds } = body;
 
     if (!message?.trim()) {
-      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Treść wiadomości jest wymagana' }, { status: 400 });
     }
 
     if (!Array.isArray(customerIds) || customerIds.length === 0) {
-      return NextResponse.json({ error: 'No recipients selected' }, { status: 400 });
+      return NextResponse.json({ error: 'Nie wybrano odbiorców' }, { status: 400 });
     }
 
     const customers = await db.customer.findMany({
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (customers.length === 0) {
-      return NextResponse.json({ error: 'No customers with SMS consent' }, { status: 400 });
+      return NextResponse.json({ error: 'Brak klientów z zgodą na SMS' }, { status: 400 });
     }
 
     const smsProvider = SmsProviderFactory.create(
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
         sent++;
       } else {
         failed++;
-        errors.push({ phone: customer.phone, error: result.error || 'Unknown error' });
+        errors.push({ phone: customer.phone, error: result.error || 'Nieznany błąd' });
       }
     }
 
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     console.error('Error sending bulk SMS:', error);
     return NextResponse.json({
       error: 'Failed to send bulk SMS',
-      details: error instanceof Error ? error.message : 'Unknown error',
+      details: error instanceof Error ? error.message : 'Nieznany błąd',
     }, { status: 500 });
   }
 }

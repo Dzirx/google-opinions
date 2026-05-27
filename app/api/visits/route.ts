@@ -8,13 +8,13 @@ export async function GET() {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     // Get all customers for this business
@@ -47,7 +47,7 @@ export async function GET() {
     return NextResponse.json({ visits: allVisits });
   } catch (error) {
     console.error('Error fetching visits:', error);
-    return NextResponse.json({ error: 'Failed to fetch visits' }, { status: 500 });
+    return NextResponse.json({ error: 'Nie udało się pobrać wizyt' }, { status: 500 });
   }
 }
 
@@ -56,13 +56,13 @@ export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     const body = await req.json();
@@ -77,11 +77,11 @@ export async function POST(req: NextRequest) {
 
     // Validation
     if (!customerId) {
-      return NextResponse.json({ error: 'Customer ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Wymagane ID klienta' }, { status: 400 });
     }
 
     if (!visitDate) {
-      return NextResponse.json({ error: 'Visit date is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Data wizyty jest wymagana' }, { status: 400 });
     }
 
     // Verify customer exists and belongs to business
@@ -93,34 +93,34 @@ export async function POST(req: NextRequest) {
     });
 
     if (!customer) {
-      return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono klienta' }, { status: 404 });
     }
 
     // Validate dates
     const visit = new Date(visitDate);
     if (isNaN(visit.getTime())) {
-      return NextResponse.json({ error: 'Invalid visit date' }, { status: 400 });
+      return NextResponse.json({ error: 'Nieprawidłowa data wizyty' }, { status: 400 });
     }
 
     if (reminderSmsDate) {
       const reminder = new Date(reminderSmsDate);
       if (isNaN(reminder.getTime())) {
-        return NextResponse.json({ error: 'Invalid reminder SMS date' }, { status: 400 });
+        return NextResponse.json({ error: 'Nieprawidłowa data SMS z przypomnieniem' }, { status: 400 });
       }
       // Reminder should be before visit
       if (reminder >= visit) {
-        return NextResponse.json({ error: 'Reminder SMS date should be before visit date' }, { status: 400 });
+        return NextResponse.json({ error: 'Data SMS z przypomnieniem powinna być przed datą wizyty' }, { status: 400 });
       }
     }
 
     if (reviewSmsDate) {
       const review = new Date(reviewSmsDate);
       if (isNaN(review.getTime())) {
-        return NextResponse.json({ error: 'Invalid review SMS date' }, { status: 400 });
+        return NextResponse.json({ error: 'Nieprawidłowa data SMS z prośbą o opinię' }, { status: 400 });
       }
       // Review should be after visit
       if (review <= visit) {
-        return NextResponse.json({ error: 'Review SMS date should be after visit date' }, { status: 400 });
+        return NextResponse.json({ error: 'Data SMS z prośbą o opinię powinna być po dacie wizyty' }, { status: 400 });
       }
     }
 
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ visit: newVisit }, { status: 201 });
   } catch (error) {
     console.error('Error creating visit:', error);
-    return NextResponse.json({ error: 'Failed to create visit' }, { status: 500 });
+    return NextResponse.json({ error: 'Nie udało się utworzyć wizyty' }, { status: 500 });
   }
 }
 
@@ -148,13 +148,13 @@ export async function PATCH(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     const body = await req.json();
@@ -169,7 +169,7 @@ export async function PATCH(req: NextRequest) {
     } = body;
 
     if (!id) {
-      return NextResponse.json({ error: 'Visit ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Wymagane ID wizyty' }, { status: 400 });
     }
 
     // Get visit with customer to verify ownership
@@ -181,41 +181,41 @@ export async function PATCH(req: NextRequest) {
     });
 
     if (!visit || visit.customer.businessId !== userBusiness.id) {
-      return NextResponse.json({ error: 'Visit not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono wizyty' }, { status: 404 });
     }
 
     // Prevent editing if SMS already sent
     if (visit.reminderSmsStatus === 'sent' && reminderSmsDate !== undefined) {
-      return NextResponse.json({ error: 'Cannot update reminder SMS date after it has been sent' }, { status: 400 });
+      return NextResponse.json({ error: 'Nie można zmienić daty SMS z przypomnieniem — wiadomość już wysłana' }, { status: 400 });
     }
 
     if (visit.reviewSmsStatus === 'sent' && reviewSmsDate !== undefined) {
-      return NextResponse.json({ error: 'Cannot update review SMS date after it has been sent' }, { status: 400 });
+      return NextResponse.json({ error: 'Nie można zmienić daty SMS z prośbą o opinię — wiadomość już wysłana' }, { status: 400 });
     }
 
     // Validate dates if provided
     const newVisitDate = visitDate ? new Date(visitDate) : new Date(visit.visitDate);
     if (visitDate && isNaN(newVisitDate.getTime())) {
-      return NextResponse.json({ error: 'Invalid visit date' }, { status: 400 });
+      return NextResponse.json({ error: 'Nieprawidłowa data wizyty' }, { status: 400 });
     }
 
     if (reminderSmsDate) {
       const reminder = new Date(reminderSmsDate);
       if (isNaN(reminder.getTime())) {
-        return NextResponse.json({ error: 'Invalid reminder SMS date' }, { status: 400 });
+        return NextResponse.json({ error: 'Nieprawidłowa data SMS z przypomnieniem' }, { status: 400 });
       }
       if (reminder >= newVisitDate) {
-        return NextResponse.json({ error: 'Reminder SMS date should be before visit date' }, { status: 400 });
+        return NextResponse.json({ error: 'Data SMS z przypomnieniem powinna być przed datą wizyty' }, { status: 400 });
       }
     }
 
     if (reviewSmsDate) {
       const review = new Date(reviewSmsDate);
       if (isNaN(review.getTime())) {
-        return NextResponse.json({ error: 'Invalid review SMS date' }, { status: 400 });
+        return NextResponse.json({ error: 'Nieprawidłowa data SMS z prośbą o opinię' }, { status: 400 });
       }
       if (review <= newVisitDate) {
-        return NextResponse.json({ error: 'Review SMS date should be after visit date' }, { status: 400 });
+        return NextResponse.json({ error: 'Data SMS z prośbą o opinię powinna być po dacie wizyty' }, { status: 400 });
       }
     }
 
@@ -237,7 +237,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ visit: updatedVisit });
   } catch (error) {
     console.error('Error updating visit:', error);
-    return NextResponse.json({ error: 'Failed to update visit' }, { status: 500 });
+    return NextResponse.json({ error: 'Nie udało się zaktualizować wizyty' }, { status: 500 });
   }
 }
 
@@ -246,20 +246,20 @@ export async function DELETE(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const userBusiness = await getUserBusiness(session.user.id);
 
     if (!userBusiness) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'Visit ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Wymagane ID wizyty' }, { status: 400 });
     }
 
     // Get visit with customer to verify ownership
@@ -271,7 +271,7 @@ export async function DELETE(req: NextRequest) {
     });
 
     if (!visit || visit.customer.businessId !== userBusiness.id) {
-      return NextResponse.json({ error: 'Visit not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono wizyty' }, { status: 404 });
     }
 
     // Delete visit (cascade deletes reviews, sms_logs)
@@ -282,6 +282,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ message: 'Visit deleted successfully' });
   } catch (error) {
     console.error('Error deleting visit:', error);
-    return NextResponse.json({ error: 'Failed to delete visit' }, { status: 500 });
+    return NextResponse.json({ error: 'Nie udało się usunąć wizyty' }, { status: 500 });
   }
 }

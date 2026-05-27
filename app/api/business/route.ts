@@ -8,7 +8,7 @@ export async function GET() {
     const session = await auth();
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const business = await db.business.findFirst({
@@ -22,7 +22,7 @@ export async function GET() {
     return NextResponse.json({ business }, { status: 200 });
   } catch (error) {
     console.error('Error fetching business:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Wystąpił błąd serwera' }, { status: 500 });
   }
 }
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const session = await auth();
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     // Check if user already has a business (1:1 relationship in MVP)
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     if (existingBusiness) {
       return NextResponse.json(
-        { error: 'Business already exists. Please update your existing business.' },
+        { error: 'Firma już istnieje. Zaktualizuj istniejącą firmę.' },
         { status: 400 }
       );
     }
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     // Validation
     if (!name || !googleReviewUrl) {
       return NextResponse.json(
-        { error: 'Name and Google Review URL are required' },
+        { error: 'Nazwa i URL Google Reviews są wymagane' },
         { status: 400 }
       );
     }
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     const googleUrlPattern = /^https?:\/\/(www\.)?(g\.page|google\.com\/(maps|search)|goo\.gl)/i;
     if (!googleUrlPattern.test(googleReviewUrl)) {
       return NextResponse.json(
-        { error: 'Invalid Google Review URL format' },
+        { error: 'Nieprawidłowy format adresu URL Google Reviews' },
         { status: 400 }
       );
     }
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ business: newBusiness }, { status: 201 });
   } catch (error) {
     console.error('Error creating business:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Wystąpił błąd serwera' }, { status: 500 });
   }
 }
 
@@ -94,7 +94,7 @@ export async function PATCH(request: NextRequest) {
     const session = await auth();
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const business = await db.business.findFirst({
@@ -102,7 +102,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     if (!business) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     const body = await request.json();
@@ -113,7 +113,7 @@ export async function PATCH(request: NextRequest) {
       const googleUrlPattern = /^https?:\/\/(www\.)?(g\.page|google\.com\/(maps|search)|goo\.gl)/i;
       if (!googleUrlPattern.test(googleReviewUrl)) {
         return NextResponse.json(
-          { error: 'Invalid Google Review URL format' },
+          { error: 'Nieprawidłowy format adresu URL Google Reviews' },
           { status: 400 }
         );
       }
@@ -136,7 +136,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ business: updatedBusiness }, { status: 200 });
   } catch (error) {
     console.error('Error updating business:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Wystąpił błąd serwera' }, { status: 500 });
   }
 }
 
@@ -146,7 +146,7 @@ export async function DELETE() {
     const session = await auth();
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nieautoryzowany' }, { status: 401 });
     }
 
     const business = await db.business.findFirst({
@@ -154,7 +154,7 @@ export async function DELETE() {
     });
 
     if (!business) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Nie znaleziono firmy' }, { status: 404 });
     }
 
     // Check if business has customers
@@ -180,6 +180,6 @@ export async function DELETE() {
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error('Error deleting business:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Wystąpił błąd serwera' }, { status: 500 });
   }
 }
