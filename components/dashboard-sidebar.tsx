@@ -38,6 +38,9 @@ export function DashboardSidebar({ userEmail, userRole, signOutAction }: Dashboa
           <NavLink href="/work-orders">
             {t('workOrders')}
           </NavLink>
+          <NavLink href="/inventory">
+            {t('inventory')}
+          </NavLink>
           <NavLink href="/messages">
             {t('messages')}
           </NavLink>

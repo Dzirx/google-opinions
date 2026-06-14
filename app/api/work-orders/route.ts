@@ -21,7 +21,20 @@ function mapItemData(item: any) {
     lensType: item.lensType || null,
     framePrice: item.framePrice !== '' && item.framePrice != null ? parseFloat(item.framePrice) : null,
     lensPrice: item.lensPrice !== '' && item.lensPrice != null ? parseFloat(item.lensPrice) : null,
+    inventoryItemIdOp: item.inventoryItemIdOp || null,
+    inventoryItemIdOl: item.inventoryItemIdOl || null,
+    inventoryItemIdFrame: item.inventoryItemIdFrame || null,
   };
+}
+
+function buildInventoryAdjustments(
+  adjustments: Record<string, number>,
+  idOp: string | null | undefined,
+  idOl: string | null | undefined,
+  delta: number,
+) {
+  if (idOp) adjustments[idOp] = (adjustments[idOp] || 0) + delta;
+  if (idOl) adjustments[idOl] = (adjustments[idOl] || 0) + delta;
 }
 
 // GET - List all work orders for business
@@ -98,22 +111,42 @@ export async function POST(req: NextRequest) {
       orderNumber = `ZL/${year}/${String(count + 1).padStart(3, '0')}`;
     }
 
-    const workOrder = await db.workOrder.create({
-      data: {
-        businessId: userBusiness.id,
-        customerId,
-        orderNumber,
-        receivedAt: new Date(receivedAt),
-        pickupDate: pickupDate ? new Date(pickupDate) : null,
-        status: status || 'pending',
-        totalAmount: totalAmount ? parseFloat(totalAmount) : null,
-        deposit: deposit ? parseFloat(deposit) : null,
-        notes: notes || null,
-        items: {
-          create: (items || []).map(mapItemData),
+    // Build inventory adjustments for new items
+    const inventoryAdjustments: Record<string, number> = {};
+    for (const item of (items || [])) {
+      buildInventoryAdjustments(inventoryAdjustments, item.inventoryItemIdOp || null, item.inventoryItemIdOl || null, -1);
+      if (item.inventoryItemIdFrame) inventoryAdjustments[item.inventoryItemIdFrame] = (inventoryAdjustments[item.inventoryItemIdFrame] || 0) - 1;
+    }
+
+    const workOrder = await db.$transaction(async (tx) => {
+      const created = await tx.workOrder.create({
+        data: {
+          businessId: userBusiness.id,
+          customerId,
+          orderNumber,
+          receivedAt: new Date(receivedAt),
+          pickupDate: pickupDate ? new Date(pickupDate) : null,
+          status: status || 'pending',
+          totalAmount: totalAmount ? parseFloat(totalAmount) : null,
+          deposit: deposit ? parseFloat(deposit) : null,
+          notes: notes || null,
+          items: {
+            create: (items || []).map(mapItemData),
+          },
         },
-      },
-      include: { items: true, customer: true },
+        include: { items: true, customer: true },
+      });
+
+      for (const [id, delta] of Object.entries(inventoryAdjustments)) {
+        if (delta !== 0) {
+          await tx.inventoryItem.update({
+            where: { id },
+            data: { quantity: { increment: delta } },
+          });
+        }
+      }
+
+      return created;
     });
 
     return NextResponse.json({ workOrder }, { status: 201 });
@@ -150,43 +183,100 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Nie znaleziono zlecenia' }, { status: 404 });
     }
 
-    // Diff items only when explicitly provided in the request
-    if (items !== undefined) {
-      const incomingIds = (items as any[]).filter(i => i.id).map((i: any) => i.id as string);
-      const existingItems = await db.workOrderItem.findMany({ where: { workOrderId: id } });
-      const existingIds = existingItems.map(i => i.id);
+    const workOrder = await db.$transaction(async (tx) => {
+      if (items !== undefined) {
+        const isDbId = (itemId: string) => !itemId.startsWith('new-');
+        const existingItems = await tx.workOrderItem.findMany({
+          where: { workOrderId: id },
+          select: { id: true, inventoryItemIdOp: true, inventoryItemIdOl: true, inventoryItemIdFrame: true },
+        });
 
-      const isDbId = (id: string) => !id.startsWith('new-');
-      const toDelete = existingIds.filter(eid => !incomingIds.filter(isDbId).includes(eid));
-      const toUpdate = (items as any[]).filter(i => i.id && isDbId(i.id));
-      const toCreate = (items as any[]).filter(i => !i.id || !isDbId(i.id));
+        const incomingDbItems = (items as any[]).filter(i => i.id && isDbId(i.id));
+        const incomingNewItems = (items as any[]).filter(i => !i.id || !isDbId(i.id));
+        const incomingIds = incomingDbItems.map((i: any) => i.id as string);
 
-      await Promise.all([
-        toDelete.length > 0
-          ? db.workOrderItem.deleteMany({ where: { id: { in: toDelete } } })
-          : Promise.resolve(),
-        ...toUpdate.map((item: any) =>
-          db.workOrderItem.update({ where: { id: item.id }, data: mapItemData(item) })
-        ),
-        ...toCreate.map((item: any) =>
-          db.workOrderItem.create({ data: { workOrderId: id, ...mapItemData(item) } })
-        ),
-      ]);
-    }
+        const toDelete = existingItems.filter(ei => !incomingIds.includes(ei.id));
+        const toUpdate = incomingDbItems;
+        const toCreate = incomingNewItems;
 
-    const workOrder = await db.workOrder.update({
-      where: { id },
-      data: {
-        customerId: customerId ?? existing.customerId,
-        orderNumber: orderNumber?.trim() || existing.orderNumber,
-        receivedAt: receivedAt ? new Date(receivedAt) : existing.receivedAt,
-        pickupDate: pickupDate ? new Date(pickupDate) : null,
-        status: status ?? existing.status,
-        totalAmount: totalAmount !== undefined ? (totalAmount !== '' ? parseFloat(totalAmount) : null) : existing.totalAmount,
-        deposit: deposit !== undefined ? (deposit !== '' ? parseFloat(deposit) : null) : existing.deposit,
-        notes: notes !== undefined ? notes || null : existing.notes,
-      },
-      include: { items: { orderBy: { id: 'asc' } }, customer: true },
+        // Build inventory adjustments
+        const inventoryAdjustments: Record<string, number> = {};
+
+        // Deleted items → return to inventory
+        for (const item of toDelete) {
+          buildInventoryAdjustments(inventoryAdjustments, item.inventoryItemIdOp, item.inventoryItemIdOl, +1);
+          if (item.inventoryItemIdFrame) inventoryAdjustments[item.inventoryItemIdFrame] = (inventoryAdjustments[item.inventoryItemIdFrame] || 0) + 1;
+        }
+
+        // New items → take from inventory
+        for (const item of toCreate) {
+          buildInventoryAdjustments(inventoryAdjustments, item.inventoryItemIdOp || null, item.inventoryItemIdOl || null, -1);
+      if (item.inventoryItemIdFrame) inventoryAdjustments[item.inventoryItemIdFrame] = (inventoryAdjustments[item.inventoryItemIdFrame] || 0) - 1;
+        }
+
+        // Updated items → diff old vs new inventory links
+        for (const newItem of toUpdate) {
+          const oldItem = existingItems.find(ei => ei.id === newItem.id);
+          if (!oldItem) continue;
+
+          const oldOp = oldItem.inventoryItemIdOp || null;
+          const newOp = newItem.inventoryItemIdOp || null;
+          if (oldOp !== newOp) {
+            if (oldOp) inventoryAdjustments[oldOp] = (inventoryAdjustments[oldOp] || 0) + 1;
+            if (newOp) inventoryAdjustments[newOp] = (inventoryAdjustments[newOp] || 0) - 1;
+          }
+
+          const oldOl = oldItem.inventoryItemIdOl || null;
+          const newOl = newItem.inventoryItemIdOl || null;
+          if (oldOl !== newOl) {
+            if (oldOl) inventoryAdjustments[oldOl] = (inventoryAdjustments[oldOl] || 0) + 1;
+            if (newOl) inventoryAdjustments[newOl] = (inventoryAdjustments[newOl] || 0) - 1;
+          }
+
+          const oldFrame = oldItem.inventoryItemIdFrame || null;
+          const newFrame = newItem.inventoryItemIdFrame || null;
+          if (oldFrame !== newFrame) {
+            if (oldFrame) inventoryAdjustments[oldFrame] = (inventoryAdjustments[oldFrame] || 0) + 1;
+            if (newFrame) inventoryAdjustments[newFrame] = (inventoryAdjustments[newFrame] || 0) - 1;
+          }
+        }
+
+        // Apply item changes
+        if (toDelete.length > 0) {
+          await tx.workOrderItem.deleteMany({ where: { id: { in: toDelete.map(i => i.id) } } });
+        }
+        for (const item of toUpdate) {
+          await tx.workOrderItem.update({ where: { id: item.id }, data: mapItemData(item) });
+        }
+        for (const item of toCreate) {
+          await tx.workOrderItem.create({ data: { workOrderId: id, ...mapItemData(item) } });
+        }
+
+        // Apply inventory adjustments
+        for (const [invId, delta] of Object.entries(inventoryAdjustments)) {
+          if (delta !== 0) {
+            await tx.inventoryItem.update({
+              where: { id: invId },
+              data: { quantity: { increment: delta } },
+            });
+          }
+        }
+      }
+
+      return tx.workOrder.update({
+        where: { id },
+        data: {
+          customerId: customerId ?? existing.customerId,
+          orderNumber: orderNumber?.trim() || existing.orderNumber,
+          receivedAt: receivedAt ? new Date(receivedAt) : existing.receivedAt,
+          pickupDate: pickupDate ? new Date(pickupDate) : null,
+          status: status ?? existing.status,
+          totalAmount: totalAmount !== undefined ? (totalAmount !== '' ? parseFloat(totalAmount) : null) : existing.totalAmount,
+          deposit: deposit !== undefined ? (deposit !== '' ? parseFloat(deposit) : null) : existing.deposit,
+          notes: notes !== undefined ? notes || null : existing.notes,
+        },
+        include: { items: { orderBy: { id: 'asc' } }, customer: true },
+      });
     });
 
     return NextResponse.json({ workOrder });
@@ -223,7 +313,29 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Nie znaleziono zlecenia' }, { status: 404 });
     }
 
-    await db.workOrder.delete({ where: { id } });
+    // Return all linked inventory items before cascade delete
+    const itemsToReturn = await db.workOrderItem.findMany({
+      where: { workOrderId: id },
+      select: { inventoryItemIdOp: true, inventoryItemIdOl: true, inventoryItemIdFrame: true },
+    });
+
+    const inventoryAdjustments: Record<string, number> = {};
+    for (const item of itemsToReturn) {
+      buildInventoryAdjustments(inventoryAdjustments, item.inventoryItemIdOp, item.inventoryItemIdOl, +1);
+      if (item.inventoryItemIdFrame) inventoryAdjustments[item.inventoryItemIdFrame] = (inventoryAdjustments[item.inventoryItemIdFrame] || 0) + 1;
+    }
+
+    await db.$transaction(async (tx) => {
+      await tx.workOrder.delete({ where: { id } });
+      for (const [invId, delta] of Object.entries(inventoryAdjustments)) {
+        if (delta !== 0) {
+          await tx.inventoryItem.update({
+            where: { id: invId },
+            data: { quantity: { increment: delta } },
+          });
+        }
+      }
+    });
 
     return NextResponse.json({ message: 'Work order deleted successfully' });
   } catch (error) {

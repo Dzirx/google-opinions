@@ -70,6 +70,7 @@ model Business {
   user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   customers            Customer[]
   workOrders           WorkOrder[]
+  inventoryItems       InventoryItem[]
 
   @@map("businesses")
 }
@@ -182,9 +183,43 @@ model WorkOrderItem {
   framePrice  Decimal?  @map("frame_price") @db.Decimal(10,2)
   lensPrice   Decimal?  @map("lens_price") @db.Decimal(10,2)
 
+  // Magazyn (per oko + oprawka)
+  inventoryItemIdOp    String?        @map("inventory_item_id_op") @db.Uuid
+  inventoryItemIdOl    String?        @map("inventory_item_id_ol") @db.Uuid
+  inventoryItemIdFrame String?        @map("inventory_item_id_frame") @db.Uuid
+  inventoryItemOp      InventoryItem? @relation("InventoryOp", fields: [inventoryItemIdOp], references: [id], onDelete: SetNull)
+  inventoryItemOl      InventoryItem? @relation("InventoryOl", fields: [inventoryItemIdOl], references: [id], onDelete: SetNull)
+  inventoryItemFrame   InventoryItem? @relation("InventoryFrame", fields: [inventoryItemIdFrame], references: [id], onDelete: SetNull)
+
   workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 
   @@map("work_order_items")
+}
+
+// ========================================
+// Inventory Items Table
+// ========================================
+model InventoryItem {
+  id         String    @id @default(uuid()) @db.Uuid
+  businessId String    @map("business_id") @db.Uuid
+  name       String    @db.VarChar(255)
+  quantity   Int       @default(0)
+  unit       String    @default("szt.") @db.VarChar(20)
+  category   String?   @db.VarChar(100)
+  sph        Decimal?  @db.Decimal(5,2)
+  cyl        Decimal?  @db.Decimal(5,2)
+  diameter   Decimal?  @db.Decimal(5,1)
+  price      Decimal?  @db.Decimal(10,2)
+  notes      String?   @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  business            Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  workOrderItemsOp    WorkOrderItem[] @relation("InventoryOp")
+  workOrderItemsOl    WorkOrderItem[] @relation("InventoryOl")
+  workOrderItemsFrame WorkOrderItem[] @relation("InventoryFrame")
+
+  @@map("inventory_items")
 }
 
 // ========================================
