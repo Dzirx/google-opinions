@@ -78,18 +78,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check for duplicate phone in same business
-    const existingCustomer = await db.customer.findFirst({
-      where: {
-        businessId: userBusiness.id,
-        phone: phone,
-      },
-    });
-
-    if (existingCustomer) {
-      return NextResponse.json({ error: 'Klient z tym numerem telefonu już istnieje' }, { status: 400 });
-    }
-
     // Create customer
     const newCustomer = await db.customer.create({
       data: {
@@ -157,17 +145,6 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: 'Nieprawidłowy numer telefonu' }, { status: 400 });
       }
 
-      // Check for duplicate phone (excluding current customer)
-      const existingCustomer = await db.customer.findFirst({
-        where: {
-          businessId: userBusiness.id,
-          phone: phone,
-        },
-      });
-
-      if (existingCustomer && existingCustomer.id !== id) {
-        return NextResponse.json({ error: 'Inny klient z tym numerem telefonu już istnieje' }, { status: 400 });
-      }
     }
 
     if (email) {

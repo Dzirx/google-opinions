@@ -59,6 +59,26 @@ const STATUSES = [
   { value: 'completed', labelKey: 'orderCompleted' },
 ];
 
+function genOpts(from: number, to: number, step: number, decimals: number) {
+  const opts: { value: string; label: string }[] = [];
+  for (let v = from; v <= to + step / 2; v += step) {
+    const r = Math.round(v * 1000) / 1000;
+    const fixed = r.toFixed(decimals);
+    opts.push({ value: fixed, label: r > 0 ? `+${fixed}` : fixed });
+  }
+  return opts;
+}
+
+const SPH_OPTIONS = genOpts(-20, 20, 0.25, 2);
+const CYL_OPTIONS = genOpts(-8, 8, 0.25, 2);
+const ADD_OPTIONS = genOpts(0.25, 4, 0.25, 2);
+const PD_OPTIONS  = genOpts(25, 40, 0.5, 1);
+
+const FIELD_OPTIONS: Record<string, { value: string; label: string }[] | null> = {
+  opSph: SPH_OPTIONS, opCyl: CYL_OPTIONS, opAxis: null, opAdd: ADD_OPTIONS, opPd: PD_OPTIONS,
+  olSph: SPH_OPTIONS, olCyl: CYL_OPTIONS, olAxis: null, olAdd: ADD_OPTIONS, olPd: PD_OPTIONS,
+};
+
 function emptyItem(): WorkOrderItem {
   return {
     id: `new-${Math.random().toString(36).slice(2)}`,
@@ -849,11 +869,24 @@ export default function WorkOrdersPage() {
                                   <td className="px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap">{t('okoPrawe')}</td>
                                   {(['opSph', 'opCyl', 'opAxis', 'opPd'] as const).map(field => (
                                     <td key={field} className="px-1 py-1">
-                                      <input type="number" step={field === 'opAxis' ? '1' : '0.25'}
-                                        value={(item as any)[field]}
-                                        onChange={e => setItemField(idx, field, e.target.value)}
-                                        className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-blue-400"
-                                        placeholder="—" />
+                                      {FIELD_OPTIONS[field] ? (
+                                        <select
+                                          value={(item as any)[field]}
+                                          onChange={e => setItemField(idx, field, e.target.value)}
+                                          className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-blue-400"
+                                        >
+                                          <option value="">—</option>
+                                          {FIELD_OPTIONS[field]!.map(o => (
+                                            <option key={o.value} value={o.value}>{o.label}</option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <input type="number" step="1" min="1" max="180"
+                                          value={(item as any)[field]}
+                                          onChange={e => setItemField(idx, field, e.target.value)}
+                                          className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-blue-400"
+                                          placeholder="—" />
+                                      )}
                                     </td>
                                   ))}
                                 </tr>
@@ -861,11 +894,24 @@ export default function WorkOrdersPage() {
                                   <td className="px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap">{t('okoLewe')}</td>
                                   {(['olSph', 'olCyl', 'olAxis', 'olPd'] as const).map(field => (
                                     <td key={field} className="px-1 py-1">
-                                      <input type="number" step={field === 'olAxis' ? '1' : '0.25'}
-                                        value={(item as any)[field]}
-                                        onChange={e => setItemField(idx, field, e.target.value)}
-                                        className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-blue-400"
-                                        placeholder="—" />
+                                      {FIELD_OPTIONS[field] ? (
+                                        <select
+                                          value={(item as any)[field]}
+                                          onChange={e => setItemField(idx, field, e.target.value)}
+                                          className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-blue-400"
+                                        >
+                                          <option value="">—</option>
+                                          {FIELD_OPTIONS[field]!.map(o => (
+                                            <option key={o.value} value={o.value}>{o.label}</option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <input type="number" step="1" min="1" max="180"
+                                          value={(item as any)[field]}
+                                          onChange={e => setItemField(idx, field, e.target.value)}
+                                          className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-blue-400"
+                                          placeholder="—" />
+                                      )}
                                     </td>
                                   ))}
                                 </tr>
@@ -886,21 +932,31 @@ export default function WorkOrdersPage() {
                                 <tr>
                                   <td className="px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap">{t('okoPrawe')}</td>
                                   <td className="px-1 py-1 w-24">
-                                    <input type="number" step="0.25"
+                                    <select
                                       value={item.opAdd}
                                       onChange={e => setItemField(idx, 'opAdd', e.target.value)}
                                       className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-green-400"
-                                      placeholder="—" />
+                                    >
+                                      <option value="">—</option>
+                                      {ADD_OPTIONS.map(o => (
+                                        <option key={o.value} value={o.value}>{o.label}</option>
+                                      ))}
+                                    </select>
                                   </td>
                                 </tr>
                                 <tr>
                                   <td className="px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap">{t('okoLewe')}</td>
                                   <td className="px-1 py-1 w-24">
-                                    <input type="number" step="0.25"
+                                    <select
                                       value={item.olAdd}
                                       onChange={e => setItemField(idx, 'olAdd', e.target.value)}
                                       className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-green-400"
-                                      placeholder="—" />
+                                    >
+                                      <option value="">—</option>
+                                      {ADD_OPTIONS.map(o => (
+                                        <option key={o.value} value={o.value}>{o.label}</option>
+                                      ))}
+                                    </select>
                                   </td>
                                 </tr>
                               </tbody>
@@ -925,11 +981,24 @@ export default function WorkOrdersPage() {
                               <td className="px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap">{t('okoPrawe')}</td>
                               {(['opSph', 'opCyl', 'opAxis', 'opAdd', 'opPd'] as const).map(field => (
                                 <td key={field} className="px-1 py-1">
-                                  <input type="number" step={field === 'opAxis' ? '1' : '0.25'}
-                                    value={(item as any)[field]}
-                                    onChange={e => setItemField(idx, field, e.target.value)}
-                                    className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-blue-400"
-                                    placeholder="—" />
+                                  {FIELD_OPTIONS[field] ? (
+                                    <select
+                                      value={(item as any)[field]}
+                                      onChange={e => setItemField(idx, field, e.target.value)}
+                                      className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-blue-400"
+                                    >
+                                      <option value="">—</option>
+                                      {FIELD_OPTIONS[field]!.map(o => (
+                                        <option key={o.value} value={o.value}>{o.label}</option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <input type="number" step="1" min="1" max="180"
+                                      value={(item as any)[field]}
+                                      onChange={e => setItemField(idx, field, e.target.value)}
+                                      className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-blue-400"
+                                      placeholder="—" />
+                                  )}
                                 </td>
                               ))}
                             </tr>
@@ -937,11 +1006,24 @@ export default function WorkOrdersPage() {
                               <td className="px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap">{t('okoLewe')}</td>
                               {(['olSph', 'olCyl', 'olAxis', 'olAdd', 'olPd'] as const).map(field => (
                                 <td key={field} className="px-1 py-1">
-                                  <input type="number" step={field === 'olAxis' ? '1' : '0.25'}
-                                    value={(item as any)[field]}
-                                    onChange={e => setItemField(idx, field, e.target.value)}
-                                    className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-blue-400"
-                                    placeholder="—" />
+                                  {FIELD_OPTIONS[field] ? (
+                                    <select
+                                      value={(item as any)[field]}
+                                      onChange={e => setItemField(idx, field, e.target.value)}
+                                      className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-blue-400"
+                                    >
+                                      <option value="">—</option>
+                                      {FIELD_OPTIONS[field]!.map(o => (
+                                        <option key={o.value} value={o.value}>{o.label}</option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <input type="number" step="1" min="1" max="180"
+                                      value={(item as any)[field]}
+                                      onChange={e => setItemField(idx, field, e.target.value)}
+                                      className="w-full border border-gray-200 rounded px-1 py-1 text-center text-sm text-gray-900 focus:ring-1 focus:ring-blue-400"
+                                      placeholder="—" />
+                                  )}
                                 </td>
                               ))}
                             </tr>

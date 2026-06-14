@@ -92,7 +92,6 @@ model Customer {
   visits     Visit[]
   workOrders WorkOrder[]
 
-  @@unique([businessId, phone], name: "unique_business_phone")
   @@map("customers")
 }
 
