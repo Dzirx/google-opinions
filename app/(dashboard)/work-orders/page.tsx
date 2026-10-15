@@ -714,6 +714,14 @@ export default function WorkOrdersPage() {
 
             {/* Footer */}
             <div className="px-6 py-3 border-t bg-gray-50 flex justify-end gap-2">
+              <a
+                href={`/work-orders/${previewOrder.id}/print`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 text-sm bg-gray-700 text-white rounded-lg hover:bg-gray-800"
+              >
+                {t('printWorkOrder')}
+              </a>
               <button
                 onClick={() => { setPreviewOrder(null); openEdit(previewOrder); }}
                 className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"

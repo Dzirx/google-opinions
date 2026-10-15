@@ -242,6 +242,7 @@ export const translations = {
     lensItems: 'Pozycje',
     frame: 'Oprawka',
     lenses: 'Szkła',
+    printWorkOrder: 'Drukuj zlecenie',
 
     // Inventory page
     inventory: 'Magazyn',
@@ -544,6 +545,7 @@ export const translations = {
     lensItems: 'Items',
     frame: 'Frame',
     lenses: 'Lenses',
+    printWorkOrder: 'Print work order',
 
     // Inventory page
     inventory: 'Inventory',
